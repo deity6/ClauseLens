@@ -8,7 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 import requests
 
@@ -36,11 +36,34 @@ _LANG_SEG = re.compile(
     r"da|fi|no|cs|hu|ro|el|he|uk|bg|sk|hr|sl|lt|lv|et|ca|fa|ur|ms|bn|ta)(?:[-_][a-z]{2,4})?(?=/)", re.I)
 _HAN_RE = re.compile(r"[\u4e00-\u9fff]")
 _LAT_RE = re.compile(r"[A-Za-z]")
+_IPV4_RE = re.compile(r"^\d{1,3}(\.\d{1,3}){3}$")
 
 
 def _url_dup_key(url: str) -> str:
     p = urlparse(url)
     return f"{p.netloc}{_LANG_SEG.sub('', p.path or '/').rstrip('/')}"
+
+
+def _alt_host_url(url: str) -> str | None:
+    """裸域 ↔ www 互换。
+
+    很多站的裸域和 www 是两台机器、两张证书：裸域 TLS 挂掉而 www 正常，或者反过来。
+    只试一种就下「没有条款」，等于把「我们没找对门」说成「对方没有」。
+    实测（2026-11-12 覆盖报告）：cosmoplat-aiot.com 裸域证书失败、www 上有 13KB 静态隐私政策；
+    appinn.net 裸域无 A 记录、www 200；doulor.cn 裸域超时、cloud. 子域正常。
+    """
+    p = urlparse(url)
+    host = p.hostname or ""
+    if not host or _IPV4_RE.match(host):
+        return None                       # IP 不换
+    if host.startswith("www."):
+        alt = host[4:]
+    elif host.count(".") == 1:
+        alt = "www." + host               # 只有二级域才加 www，cloud.x.com 这类子域不动
+    else:
+        return None
+    port = f":{p.port}" if p.port else ""
+    return urlunparse(p._replace(netloc=alt + port))
 
 
 def dominant_zh(texts: dict[str, str]) -> bool:
@@ -219,6 +242,19 @@ def _analyze(raw: str, use_cache: bool, rr) -> "object":
         # 百度地图开放平台、百度手机卫士），命中 registry 就不翻首页会让用户查到别的产品
         try:
             home = net.fetch(q.url, sess, total_timeout=min(net.TOTAL_TIMEOUT, _left(t_all, ANALYZE_BUDGET)))
+        except net.FetchError as _e:
+            # 裸域和 www 经常不是同一台服务器/同一张证书。实测踩过：
+            #   cosmoplat-aiot.com 裸域 TLS 失败，但 www.cosmoplat-aiot.com 有 13KB 的静态隐私政策；
+            #   appinn.net 裸域没有 A 记录，www 正常 200；
+            #   doulor.cn 裸域超时，cloud. 子域正常。
+            # 只凭裸域失败就判「没有条款」，是把「我们没找对门」说成了「对方没有」。
+            alt = _alt_host_url(q.url)
+            if alt and _left(t_all, ANALYZE_BUDGET) > 8:
+                yield "stage", {"stage": "resolve", "message": f"裸域打不开，换 {urlparse(alt).hostname} 再试一次"}
+                # 再失败就让外层 except 接住并记 fail_codes（不在这里吞掉）
+                home = net.fetch(alt, sess, total_timeout=min(net.TOTAL_TIMEOUT, _left(t_all, ANALYZE_BUDGET)))
+            else:
+                raise
             homepage_html = home.text
             homepage_url = home.url
             home_cands = discover.find_candidates(home.text, home.url, q.domain)

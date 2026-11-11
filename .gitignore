@@ -26,3 +26,6 @@ data/models/
 # wrangler 的本地缓存与构建临时文件
 .wrangler/
 frontend/.wrangler/
+
+# 测试与审计的一次性产出（覆盖率测试的原始数据等）
+out/
