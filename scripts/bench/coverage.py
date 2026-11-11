@@ -17,14 +17,18 @@
 
 设计要点
 --------
-* **串行**：服务并发上限 3，这里强制一次一个，默认间隔 1.5 s（`--interval`）。
-* **busy 重试**：收到 `code: busy` 等 15 s 重试一次（`--busy-wait`）。
+* **串行 + 限流**：服务有两道闸门——并发上限 3（超了回 `busy`），以及**每 IP 10 次/60 s**
+  的滑动窗口（超了回 `rate_limited`，`backend/clauselens/api.py:94`）。本脚本按同一节奏
+  排队（`Pacer`，留 1 次余量 → 9 次/窗口，`--rate-limit` / `--rate-window`），
+  `--interval` 只管最小间隔。撞上 `busy` 等 15 s、`rate_limited` 等 62 s 各重试一次。
 * **不设短超时**：单次分析 5–40 s，默认读超时 200 s。
 * **阶段轨迹**：把 SSE 里的 `stage` 事件全记下来——失败时"卡在哪一步"比失败码本身更有用
   （比如 `"渲染首页"` 出现过 = 走过了无头浏览器兜底）。
-* **诊断复用后端判据**：能 import `backend/clauselens/discover.py` 时，用**服务同一套**
-  `extract_text()` / `looks_like_policy()` 判页面，结论才和服务行为可比。import 不到
-  就退化成简单正则（报告里会标注）。
+* **区分"真抓到"与"靠快照"**：`stages` 里有没有 `fetch`、有没有 `cached`、文档有没有
+  `snapshot_at`，决定这条"成功"是不是实时抓的。只看 `ok` 会把覆盖率读高 30–40 个百分点。
+* **诊断复用后端判据**：能 import `backend/clauselens/` 时，用**服务同一套**
+  `extract_text()` / `looks_like_policy()` / `decode_body()` 判页面，结论才和服务行为可比。
+  import 不到就退化成简单正则（开跑第一行会打印 `判据=`）。
 
 站点列表是参数化的：默认读同目录 `coverage_sites.json`，`--sites` 可换任意一份。
 """
