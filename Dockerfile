@@ -26,13 +26,18 @@ WORKDIR /app
 
 # 先装依赖，利用层缓存
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# 国内机器直连 pypi 常超时，默认走清华镜像（海外部署时改成官方源即可）
+ARG PIP_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip install --no-cache-dir -i ${PIP_INDEX} -r requirements.txt
 
 # 代码与运行数据
 COPY backend/ ./backend/
-COPY frontend/dist/ ./frontend/dist/
 COPY data/models/ ./data/models/
 COPY data/processed/registry.json ./data/processed/registry.json
+# 前端可选：B 方案里页面由 Cloudflare Pages 托管，API 容器不需要 dist。
+# api.py 里 `if DIST.exists()` 会自动跳过静态挂载，所以 dist 不存在也能跑。
+COPY frontend/ ./frontend/
+RUN mkdir -p frontend/dist || true
 
 # ── 可选：SPA 渲染（Chromium）──────────────────────────────────────
 ARG WITH_RENDER=0
