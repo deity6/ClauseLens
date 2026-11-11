@@ -493,5 +493,13 @@ def _analyze(raw: str, use_cache: bool, rr) -> "object":
     if nm:
         res["site"]["name"] = nm
     CACHE.mkdir(parents=True, exist_ok=True)
+    # 只缓存「像样的结果」。实测踩过：alipay 的 privacy.htm 重定向到首页，185 字被当条款判成 C 级，
+    # 而这份错误结果会被缓存 24 小时——用户改也改不掉，只能等过期（2026-11-12 覆盖报告 s36）。
+    # 判据与抓取时一致：根路径 + 正文太短，就不是条款。
+    _weak = [d for d in res.get("documents") or []
+             if d.get("chars", 0) < 800 and urlparse(d.get("url") or "").path.rstrip("/") in ("", "/index.html", "/index.htm")]
+    if _weak and len(_weak) == len(res.get("documents") or []):
+        yield "result", res          # 结果照给（用户能看到），但不落缓存
+        return
     ck.write_text(json.dumps(res, ensure_ascii=False), "utf-8")
     yield "result", res

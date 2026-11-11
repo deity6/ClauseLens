@@ -66,7 +66,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http
 
 # 同时进行的分析数上限。每个分析可能拉起一个 Chromium（~480MB），
 # AWS t3.micro 只有 908MB，不设上限时三路并发就会把机器压到 swap。
-_analyze_slots = threading.BoundedSemaphore(3)
+_analyze_slots = threading.BoundedSemaphore(2)
 # SSE 的硬上限（秒）：超过它一定发 error 事件而不是静默断开。
 # 观察到的现象：notion.so 那种渲染卡死的站，120 秒过去前端既不拿到 result 也不拿到 error，
 # 只能一直转圈——比报错还糟，因为用户不知道发生了什么。
