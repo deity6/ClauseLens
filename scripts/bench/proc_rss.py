@@ -118,6 +118,7 @@ class Sampler(threading.Thread):
         self.peak_procs = 0
         self.peak_swap = 0
         self.peak_pss = 0
+        self.peak_detail: list[tuple[str, int]] = []       # 峰值那一刻的进程构成
         self.min_avail = mem_available_mb()
         self.timeline: list[tuple[float, int, int]] = []   # (t, rss_mb, n)
         self._pids: set[int] = set()
@@ -141,6 +142,11 @@ class Sampler(threading.Thread):
         rss = sum(table[p][1] for p in pids if p in table)
         if rss > self.peak_rss:
             self.peak_rss = rss
+            # 峰值那一刻每个进程各占多少：报告里要说明「谁在吃内存」
+            self.peak_detail = sorted(
+                ((_read(f"/proc/{p}/comm").decode("utf-8", "replace").strip(), table[p][1])
+                 for p in pids if p in table),
+                key=lambda x: -x[1])[:8]
         if len(pids) > self.peak_procs:
             self.peak_procs = len(pids)
         self.timeline.append((time.time() - self._t0, rss // 1048576, len(pids)))

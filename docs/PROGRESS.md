@@ -282,3 +282,52 @@ NodeLoc 是 Discourse 论坛：服务端 HTML 1,170,900 字符，其中 `<script
 副作用：`v2ex.com` 从「2 份文档 0 标签」变成「4 份文档 4 标签」——旧判据砍掉的短页面现在收进来了。
 
 
+
+## 2026-11-12 凌晨 · 上线 + 安全审计 + 内存优化
+
+### 部署（B 方案，全部在境外）
+
+- **仓库**：github.com/deity6/ClauseLens（私有）。HTTPS 推送被重置，改走 SSH（443）。
+- **前端**：Cloudflare Pages（clauselens 项目），lens.dohub.tech 自定义域。
+- **后端**：AWS 新加坡 t3.micro，venv + systemd（clauselens.service），Caddy 443 反代。
+  一开始误放在腾讯小机，后来按用户要求全部迁到境外（国内机未备案）。
+- **跨域**：Pages Function unctions/api/[[path]].js 把 /api/* 同源代理到 pi.dohub.tech，
+  前端代码不用改，SSE 原样透传。
+- 踩坑：Docker Hub 在国内拉不动基础镜像（改 venv）；pkill -f 会自杀（改 systemctl）；
+  Pages 自定义域的 DNS 记录删了没重建导致解析失败。
+
+### 安全审计（docs/reviews/2026-11-12-security.md，结论：打回）
+
+三条必修，已全部修完并实测：
+
+- **S1（严重，我自己引入的）**：为提速加的 e.sub(r"<script[^>]*>.*?</script>") 在页面含
+  **未闭合 <script>** 时退化成 O(n²)——0.48MB 畸形页面要 86.8 秒，期间 GIL 占满、整个 API 失联，
+  一个请求就能打瘫。改成两指针线性扫描 _strip_scripts()，并加 2MB 解析上限。
+  顺带把「逐节点 insert_before/insert_after」换成一次 get_text("\n")。
+  **实测：86.8s → 0.00s**，正常页面提取质量不变。
+- **H1（高）**：投票去重与限流用 equest.client.host，但生产链路是 CF Pages Function 代理，
+  后端看到的是 Cloudflare 边缘 IP（同一客户端三次落在三个不同 IP），去重完全失效。
+  改成优先读 CF-Connecting-IP。实测：连投 3 次现在是 200/409/409。
+- **H2（高）**：没有请求体上限、没有并发上限。Caddy 加 equest_body max_size 256KB
+  （实测 30 万字符 POST → 413），后端加 _analyze_slots = BoundedSemaphore(3)
+  （实测 5 路并发 → 3 成功 + 2 立即 busy）。
+
+SSRF 那一层审计确认**全部守住了**（DNS 重绑定、慢滴、chunked、逐跳重定向、端口白名单、
+XFF 伪造、快照路径穿越，含 tcpdump 验证）。
+
+### 内存优化
+
+实测四种 Chromium 启动配置（进程树 RSS 合计，AWS 上测）：
+
+| 配置 | 耗时 | RSS | 进程 |
+|---|---|---|---|
+| 默认多进程 | 5.9s | 462.9 MB | 6 |
+| + 常规瘦身 flags | 3.0s | 490.2 MB | 6 |
+| **--single-process** | **2.8s** | **280.4 MB** | **3** |
+| single + no-zygote + 更多 | 4.1s | 496.0 MB | 2 |
+
+结论：--single-process 省 180MB 且更快。风险是单进程模式有崩溃概率，所以做成
+「先试省内存的，渲染失败自动关闭实例、退回多进程重试一次」。
+
+三个 SPA 站实测（nocache）：cloud.doulor.cn 10.3s / lobehub.com 16.0s / ow.blizzard.cn 17.8s，
+全部成功；服务内存 571 → 484 MB（可用从 337 升到 424）。

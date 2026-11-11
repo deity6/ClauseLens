@@ -70,6 +70,13 @@ PW_SCHEMES = {
     "pw-flags": dict(channel=None, args=PW_ARGS_TUNED),
     "pw-single": dict(channel=None, args=PW_ARGS_TUNED + ["--single-process"]),
     "pw-flags-full": dict(channel="chromium", args=PW_ARGS_TUNED),
+    # 更激进的压法：单进程 + V8 老生代/新生代都掐到最小
+    "pw-single2": dict(channel=None, args=["--disable-gpu", "--no-sandbox", "--single-process",
+                                          "--disable-dev-shm-usage",
+                                          "--js-flags=--max-old-space-size=64 "
+                                          "--max-semi-space-size=1"]),
+    # 不合并进程，只把 GPU 拉进主进程（比 --single-process 稳一点）
+    "pw-inproc": dict(channel=None, args=PW_ARGS_TUNED + ["--in-process-gpu"]),
 }
 
 POLICY_LINK = re.compile(r"隐私|条款|协议|政策|privacy|terms|policy|agreement|legal|tos", re.I)
@@ -138,7 +145,8 @@ def run_pw(scheme: str, url: str, out: dict) -> None:
     smp.stop()
     out.update(peak_rss_mb=smp.peak_rss_mb, peak_pss_mb=smp.peak_pss_mb,
                peak_swap_mb=smp.peak_swap_mb, peak_procs=smp.peak_procs,
-               min_avail_mb=round(smp.min_avail, 1))
+               min_avail_mb=round(smp.min_avail, 1),
+               top=[f"{c}:{b // 1048576}MB" for c, b in smp.peak_detail])
 
 
 # --------------------------------------------------------------- lightpanda CLI
@@ -178,7 +186,8 @@ def run_lp_cli(scheme: str, url: str, out: dict) -> None:
     smp.stop()
     out.update(peak_rss_mb=smp.peak_rss_mb, peak_pss_mb=smp.peak_pss_mb,
                peak_swap_mb=smp.peak_swap_mb, peak_procs=smp.peak_procs,
-               min_avail_mb=round(smp.min_avail, 1))
+               min_avail_mb=round(smp.min_avail, 1),
+               top=[f"{c}:{b // 1048576}MB" for c, b in smp.peak_detail])
     txt = raw.decode("utf-8", "replace")
     try:
         obj = json.loads(txt)
@@ -273,7 +282,8 @@ def run_node(scheme: str, url: str, out: dict) -> None:
     smp.stop()
     out.update(peak_rss_mb=smp.peak_rss_mb, peak_pss_mb=smp.peak_pss_mb,
                peak_swap_mb=smp.peak_swap_mb, peak_procs=smp.peak_procs,
-               min_avail_mb=round(smp.min_avail, 1))
+               min_avail_mb=round(smp.min_avail, 1),
+               top=[f"{c}:{b // 1048576}MB" for c, b in smp.peak_detail])
     txt = raw.decode("utf-8", "replace")
     try:
         obj = json.loads(txt[txt.index("{"):])
@@ -306,7 +316,8 @@ def run_obscura(scheme: str, url: str, out: dict) -> None:
     smp.stop()
     out.update(peak_rss_mb=smp.peak_rss_mb, peak_pss_mb=smp.peak_pss_mb,
                peak_swap_mb=smp.peak_swap_mb, peak_procs=smp.peak_procs,
-               min_avail_mb=round(smp.min_avail, 1))
+               min_avail_mb=round(smp.min_avail, 1),
+               top=[f"{c}:{b // 1048576}MB" for c, b in smp.peak_detail])
     out["html"] = raw.decode("utf-8", "replace")
     e = err.decode("utf-8", "replace").strip()
     if e:
@@ -320,7 +331,7 @@ RUNNERS = {"pw": run_pw, "lp-cli": run_lp_cli, "lp-cdp": run_lp_cdp, "node": run
 def runner_for(scheme: str):
     if scheme in PW_SCHEMES:
         return RUNNERS["pw"]
-    if scheme.startswith("lp-cli"):
+    if scheme.startswith("lp-cli") or scheme == "lp-rec":
         return RUNNERS["lp-cli"]
     if scheme.startswith("lp-cdp"):
         return RUNNERS["lp-cdp"]

@@ -57,7 +57,9 @@ class StaticGZip(BaseHTTPMiddleware):
                         headers=headers, media_type=response.media_type)
 
 
-app = FastAPI(title="ClauseLens")
+# 生产不暴露交互式文档与 openapi.json：它们会把所有路由和参数结构一次性交出去，
+# 对本项目没有任何用处（前端只调 /api/*）。本地调试时临时改成默认值即可。
+app = FastAPI(title="ClauseLens", docs_url=None, redoc_url=None, openapi_url=None)
 app.add_middleware(StaticGZip)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
                    allow_methods=["*"], allow_headers=["*"])
