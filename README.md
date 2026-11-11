@@ -120,3 +120,47 @@ $env:CLAUSELENS_EGRESS = "socks5h://127.0.0.1:1080"
   脚本渲染且未收录的站点可能找不到条款，可直接粘贴条款网址。
 - 等级只与 ToS;DR 社区评级一致约一半，主要误差是 A/B 与 E 两端被压到 C/D；当作「参考信号」而非结论。
 - 中文模型训练集只有 2,000 句，低频标签（仲裁、集体诉讼、最终解释权）主要靠规则。
+
+## 线上部署
+
+| | |
+|---|---|
+| 站点 | <https://lens.dohub.tech> |
+| 前端 | Cloudflare Pages（`frontend/dist`），`/api/*` 由 Pages Function 同源代理 |
+| 后端 | AWS 新加坡 t3.micro，systemd `clauselens.service`，Caddy 443 反代到 `127.0.0.1:8787` |
+| 仓库 | <https://github.com/deity6/ClauseLens>（私有） |
+
+架构：
+
+```
+浏览器 → lens.dohub.tech (CF Pages)
+            └ /api/* → functions/api/[[path]].js → https://api.dohub.tech (Caddy → uvicorn)
+```
+
+### 运维
+
+```bash
+# 更新后端代码
+ssh <主机别名> "cd ~/clauselens && git pull && sudo systemctl restart clauselens"
+
+# 看日志 / 内存
+ssh <主机别名> "journalctl -u clauselens -f"
+ssh <主机别名> "free -m; systemctl show clauselens -p MemoryCurrent --value"
+
+# 更新前端（本地）
+cd frontend && npm run build && npx wrangler pages deploy dist --project-name clauselens
+```
+
+### 资源限制（908 MB 机器上的取舍）
+
+- `MemoryHigh=600M` / `MemoryMax=750M`（systemd），超了自动重启而不是拖垮整机
+- 分析并发 `BoundedSemaphore(3)`，超过的直接返回 `busy`
+- 渲染器 Chromium 用 `--single-process`（实测 480 MB → 280 MB），崩了自动退回多进程重试
+- 请求体上限 256 KB（Caddy）
+
+### 已知缺口
+
+- 服务器**没有装 playwright** 之前的状态已修（现在装了，`~/.cache/ms-playwright`）
+- 未配置 `CLAUSELENS_EGRESS`：被墙站点会报「连不上」。要开就在 systemd unit 里加
+  `Environment=CLAUSELENS_EGRESS=instabox:<machine-id>`
+- 渲染只覆盖「正文 < 400 字才触发」，且一次分析最多 3 页
