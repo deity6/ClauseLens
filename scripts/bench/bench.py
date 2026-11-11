@@ -35,6 +35,10 @@ TARGETS = {
     "doulor": "https://cloud.doulor.cn/privacy",     # Vue SPA，静态 12 字 / 渲染后 1271 字
     "lobehub": "https://lobehub.com/privacy",        # Next.js + Cloudflare，静态 402
     "blizzard": "https://ow.blizzard.cn/",           # 网易 Vue 站，要从链接里找条款页
+    # 泛化抽检：项目 PROGRESS.md 里点名的脚本渲染站 + 两个典型 Next/React 站
+    "taobao": "https://www.taobao.com/",
+    "zhihu": "https://www.zhihu.com/term/privacy",
+    "notion": "https://www.notion.com/privacy",
 }
 
 # Playwright 自带的两套 Chromium：默认 headless 用的是 chromium-headless-shell，
@@ -139,7 +143,7 @@ def run_pw(scheme: str, url: str, out: dict) -> None:
 
 # --------------------------------------------------------------- lightpanda CLI
 def run_lp_cli(scheme: str, url: str, out: dict) -> None:
-    """scheme: lp-cli / lp-cli-wait / lp-cli-res"""
+    """scheme: lp-cli / lp-cli-wait / lp-cli-res / lp-cli-full / lp-cli-strip"""
     args = [LP, "fetch", "--json", "--dump", "html", url]
     if scheme == "lp-cli-wait":
         args[-1:-1] = ["--wait-until", "networkidle", "--wait-ms", "8000",
@@ -147,6 +151,21 @@ def run_lp_cli(scheme: str, url: str, out: dict) -> None:
     if scheme == "lp-cli-res":
         args[-1:-1] = ["--load-resources", "stylesheet", "--load-resources", "worker",
                        "--wait-ms", "8000"]
+    if scheme == "lp-cli-full":
+        # 推荐配置：等网络真正静下来 + 载入外部样式表（否则 display:none 的菜单会混进正文）
+        args[-1:-1] = ["--wait-until", "networkidle", "--wait-ms", "8000",
+                       "--load-resources", "stylesheet", "--terminate-ms", "25000"]
+    if scheme == "lp-cli-strip":
+        args[-1:-1] = ["--wait-until", "networkidle", "--wait-ms", "8000",
+                       "--load-resources", "stylesheet", "--strip-mode", "shell",
+                       "--terminate-ms", "25000"]
+    if scheme == "lp-rec":
+        # 推荐配置：等网络静默 + 载样式表（隐藏元素不混进正文）+ 中文语言标签
+        # （--locale 同时决定 navigator.language / Accept-Language / Intl，
+        #   不设的话 i18n 站点会返回英文版）
+        args[-1:-1] = ["--wait-until", "networkidle", "--wait-ms", "8000",
+                       "--load-resources", "stylesheet", "--locale", "zh-CN",
+                       "--terminate-ms", "25000"]
     out["cmd"] = " ".join(["lightpanda", "fetch", "--dump", "html"] +
                           [a for a in args[4:-1] if a != url])
     t0 = time.time()
@@ -269,7 +288,33 @@ def run_node(scheme: str, url: str, out: dict) -> None:
         out["stderr"] = e.strip()[-500:]
 
 
-RUNNERS = {"pw": run_pw, "lp-cli": run_lp_cli, "lp-cdp": run_lp_cdp, "node": run_node}
+# ------------------------------------------------------------------ obscura
+OBSCURA = os.path.expanduser("~/bench/obscura/obscura")
+
+
+def run_obscura(scheme: str, url: str, out: dict) -> None:
+    """2025 年的 Rust 无头浏览器（V8 + CDP），官方二进制 43 MB。"""
+    args = [OBSCURA, "fetch", "--dump", "html", "--wait", "8", "--timeout", "30", url]
+    out["cmd"] = "obscura fetch --dump html --wait 8"
+    t0 = time.time()
+    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    smp = Sampler([proc.pid], markers=("obscura",))
+    smp.start()
+    raw, err = proc.communicate(timeout=120)
+    out["wall_s"] = round(time.time() - t0, 2)
+    out["rc"] = proc.returncode
+    smp.stop()
+    out.update(peak_rss_mb=smp.peak_rss_mb, peak_pss_mb=smp.peak_pss_mb,
+               peak_swap_mb=smp.peak_swap_mb, peak_procs=smp.peak_procs,
+               min_avail_mb=round(smp.min_avail, 1))
+    out["html"] = raw.decode("utf-8", "replace")
+    e = err.decode("utf-8", "replace").strip()
+    if e:
+        out["stderr"] = "\n".join(e.splitlines()[-6:])[-500:]
+
+
+RUNNERS = {"pw": run_pw, "lp-cli": run_lp_cli, "lp-cdp": run_lp_cdp, "node": run_node,
+           "obscura": run_obscura}
 
 
 def runner_for(scheme: str):
@@ -281,6 +326,8 @@ def runner_for(scheme: str):
         return RUNNERS["lp-cdp"]
     if scheme.startswith("node-"):
         return RUNNERS["node"]
+    if scheme.startswith("obscura"):
+        return RUNNERS["obscura"]
     raise SystemExit(f"未知方案: {scheme}")
 
 

@@ -20,6 +20,24 @@ MAX_RENDERS = int(os.environ.get("CLAUSELENS_MAX_RENDERS", "3"))
 RENDER_TIMEOUT_MS = int(os.environ.get("CLAUSELENS_RENDER_TIMEOUT_MS", "25000"))
 RENDER_IDLE_MS = int(os.environ.get("CLAUSELENS_RENDER_IDLE_MS", "1200"))
 
+
+# 启动参数分两档（实测数据，AWS t3.micro，cloud.doulor.cn/privacy）：
+#   --single-process  3 进程 / RSS 280 MB / 2.8s   ← 省，但 Chromium 单进程模式有崩溃概率
+#   常规多进程        6 进程 / RSS 480 MB / 5.9s   ← 稳
+# 策略：默认走省的那套；渲染失败（返回 None）时自动退回稳的那套重试一次。
+_COMMON_ARGS = [
+    "--disable-gpu",
+    "--disable-dev-shm-usage",
+    "--no-sandbox",
+    "--disable-background-networking",
+    "--disable-sync",
+    "--no-first-run",
+    "--disable-extensions",
+    "--metrics-recording-only",
+]
+SINGLE_ARGS = _COMMON_ARGS + ["--single-process", "--js-flags=--max-old-space-size=128"]
+LEAN_ARGS = _COMMON_ARGS + ["--js-flags=--max-old-space-size=160", "--renderer-process-limit=1"]
+
 _disabled = False
 _unavailable_reason = ""
 
@@ -45,12 +63,12 @@ def unavailable_reason() -> str:
     return _unavailable_reason
 
 
-def _launch(pw):
+def _launch(pw, args=None):
     """优先用系统已装的 Edge / Chrome，不额外下载 chromium。"""
     last = None
     for kw in ({"channel": "msedge"}, {"channel": "chrome"}, {}):
         try:
-            return pw.chromium.launch(headless=True, args=["--disable-gpu", "--no-sandbox"], **kw)
+            return pw.chromium.launch(headless=True, args=args or _COMMON_ARGS, **kw)
         except Exception as e:
             last = e
     raise RuntimeError(f"没有可用的浏览器: {last}")
@@ -76,11 +94,16 @@ class Renderer:
         self._pw = None
         self._browser = None
         self._ctx = None
+        self._single = True      # 是否正在用省内存模式；失败后退回 False
 
     def _start(self) -> None:
         from playwright.sync_api import sync_playwright
         self._pw = sync_playwright().start()
-        self._browser = _launch(self._pw)
+        try:
+            self._browser = _launch(self._pw, SINGLE_ARGS if self._single else LEAN_ARGS)
+        except Exception:
+            self._single = False        # 单进程起不来就用多进程
+            self._browser = _launch(self._pw, LEAN_ARGS)
         self._ctx = self._browser.new_context(
             user_agent=UA, locale="zh-CN", viewport={"width": 1440, "height": 1000})
 
@@ -105,7 +128,14 @@ class Renderer:
         if not available():
             return None
         with _RENDER_LOCK:          # 串行化：宁可排队，也不要两个浏览器抢内存
-            return self._render_inner(url, timeout_ms)
+            page = self._render_inner(url, timeout_ms)
+            if page is None and self._single:
+                # 单进程模式对某些页面会崩（这是它唯一的代价）。崩了就把这套实例丢掉，
+                # 换成稳定的多进程模式重来一次——慢 ~3 秒，但不会再失败。
+                self._single = False
+                self.close()
+                page = self._render_inner(url, timeout_ms)
+            return page
 
     def _render_inner(self, url: str, timeout_ms: int | None = None) -> Page | None:
         tmo = RENDER_TIMEOUT_MS if timeout_ms is None else max(4000, min(RENDER_TIMEOUT_MS, timeout_ms))
