@@ -168,7 +168,30 @@ class Feedback(BaseModel):
 _fb_counts: dict[str, dict[str, dict[str, int]]] = {}
 _voted: set[str] = set()
 _fb_loaded = False
-FB_IP_SALT = "clauselens-vote"     # 只用于同一 IP 去重，不是安全哈希
+# 投票去重用的盐：**不能硬编码**。审计实测 sha1("clauselens-vote|104.22.20.8")[:12] 能和
+# feedback.jsonl 里的 ip_hash 精确对上——等于把 IP 明文存进了文件（GDPR/PIPL 意义的个人信息）。
+# 改成首次启动时随机生成、落在 data/.vote_salt（600 权限），之后复用。
+def _vote_salt() -> str:
+    import secrets
+    path = ROOT / "data" / ".vote_salt"
+    try:
+        if path.exists():
+            v = path.read_text(encoding="utf-8").strip()
+            if len(v) >= 32:
+                return v
+        path.parent.mkdir(parents=True, exist_ok=True)
+        v = secrets.token_hex(24)
+        path.write_text(v, encoding="utf-8")
+        try:
+            path.chmod(0o600)
+        except Exception:
+            pass
+        return v
+    except Exception:
+        return secrets.token_hex(24)   # 落盘失败就退化成进程内随机（重启后旧哈希失效，可接受）
+
+
+FB_IP_SALT = _vote_salt()
 FB_ROTATE_BYTES = 8 * 1024 * 1024
 
 
