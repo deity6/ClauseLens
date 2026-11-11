@@ -282,7 +282,7 @@ def _analyze(raw: str, use_cache: bool, rr) -> "object":
             paths = sibs + (discover.COMMON_PATHS if not home_cands else discover.COMMON_PATHS[:8])
             tried = {c.url for c in home_cands} | {row[0] for row in docs_to_fetch}
             extra = discover.probe_paths(homepage_url, paths, tried=tried,
-                                         limit=24 if not home_cands else 14,
+                                         limit=26 if not home_cands else 22,
                                          deadline=min(14.0, _left(t_all, ANALYZE_BUDGET) * 0.4))
             if extra:
                 home_cands = home_cands + extra
@@ -295,6 +295,9 @@ def _analyze(raw: str, use_cache: bool, rr) -> "object":
 
     # ── fetch + extract
     documents, texts = [], {}
+    # 渲染跑过、但渲染完正文仍然短得不像条款的次数（用来把「没找到」和
+    # 「渲染了也没拿到」分开——后者用户重试也没用，得换页面）
+    render_empty = 0
     seen_hash, seen_url, seen_lang = set(), set(), set()
     seen_final: set[str] = set()   # 最终 URL（跟随重定向之后）的去重键
     queue = list(docs_to_fetch)
@@ -342,6 +345,8 @@ def _analyze(raw: str, use_cache: bool, rr) -> "object":
                     rt2, rtext = discover.extract_text(rp.text)
                     if len(rtext) > len(text):
                         ptitle, text = rt2, rtext
+                    elif len(rtext) < 400:
+                        render_empty += 1
             if snap and not discover.looks_like_policy(text):
                 raise net.FetchError("spa", "脚本渲染页面")
             used_snapshot = None
@@ -359,6 +364,11 @@ def _analyze(raw: str, use_cache: bool, rr) -> "object":
                         and c.score >= 12 and not GENERIC_ANCHOR.search(c.title)):
                     queue.append((c.url, c.title, c.doc_type, 1))
         if not discover.looks_like_policy(text):
+            continue
+        # 首页本身很少是条款页：它的正文是「欢迎/介绍/导航」，页脚那段隐私小字会被算进去。
+        # 实测 alipay 精确模式命中首页 185 字，还被判成 C 级（2026-11-12 覆盖报告 s36）。
+        # 只挡「根路径 + 短正文」，长首页（有些站把条款直接铺在首页）不受影响。
+        if len(text) < 800 and urlparse(page.url).path.rstrip("/") in ("", "/index.html", "/index.htm"):
             continue
         # 重定向常常落到同一份文档的另一个语言版本上（help.github.com/articles/github-terms-of-service/
         # → docs.github.com/zh/site-policy/...），这一层只能在拿到最终 URL 后判
@@ -409,8 +419,12 @@ def _analyze(raw: str, use_cache: bool, rr) -> "object":
             yield "error", {"code": "blocked_by_site", "status": top,
                             "message_zh": f"{q.domain} 的页面能连上，但对方拒绝了我们（HTTP {top}）。{hint}{tail}"}
             return
-        hint = ("可能是这个站把条款放在登录后、整页由脚本渲染，或者压根没有公开条款。"
-                "如果你知道条款页地址，把整条粘进来（带 /privacy 这种路径）会只分析那一页。")
+        if render_empty:
+            hint = ("这个站的正文要跑脚本才有，我们渲染过了但拿到的仍然不是条款（可能是登录墙、"
+                    "地区限制，或者条款根本不在这个页面）。如果你手上有具体的条款页地址，直接粘整条会更好。")
+        else:
+            hint = ("可能是这个站把条款放在登录后、整页由脚本渲染，或者压根没有公开条款。"
+                    "如果你知道条款页地址，把整条粘进来（带 /privacy 这种路径）会只分析那一页。")
         yield "error", {"code": "not_found", "message_zh": f"没有找到 {q.domain} 的条款页面。{hint}"}
         return
 

@@ -29,6 +29,15 @@ COMMON_PATHS = [
     "/help/privacy", "/support/privacy", "/legal/privacy.html", "/legal/terms.html",
     # 中文站的习惯写法
     "/agreement.html", "/protocol.html", "/yinsi", "/yinsi.html", "/terms.php", "/privacy.php",
+    # ── 中文语义路径（2026-11-12 覆盖报告：38 条里一条中文路径都没有，
+    #    而国内中小站大量直接拿中文当路径；这些都能正常 URL 编码请求）──
+    "/隐私政策", "/隐私政策.html", "/隐私声明", "/用户协议", "/用户协议.html",
+    "/服务协议", "/服务条款", "/使用条款", "/法律声明", "/免责声明", "/版权声明",
+    "/policy", "/policies", "/agreement", "/protocol", "/statement", "/legal.html",
+    # 国内常见的「协议中心」结构
+    "/terms/index.html", "/privacy/index.html", "/about/agreement.html", "/about/statement.html",
+    "/static/privacy.html", "/static/terms.html", "/html/privacy.html", "/html/terms.html",
+    "/info/privacy", "/info/terms", "/site/privacy", "/site/terms", "/company/privacy", "/company/terms",
 ]
 
 # 从一份已知声明页推出同目录兄弟页用的文件名（保留原扩展名）
@@ -161,6 +170,48 @@ def classify_link(text: str, href: str) -> tuple[str, float] | None:
     return best if best and best[1] > 0 else None
 
 
+
+_DOUBLE_SUFFIX = {"com", "net", "org", "gov", "edu", "co", "ac", "or", "ne", "go"}
+
+
+def base_domain(host: str) -> str:
+    """粗略取注册主域：`ow.blizzard.cn` 和 `wow.blizzard.cn` 都归到 `blizzard.cn`。
+
+    只用来判「是不是同一家的站」，不做严格 PSL 解析——错了也只是少/多采信一条链接。
+    """
+    host = (host or "").lower().strip(".")
+    parts = host.split(".")
+    if len(parts) <= 2:
+        return host
+    if len(parts) >= 3 and parts[-2] in _DOUBLE_SUFFIX and len(parts[-1]) == 2:
+        return ".".join(parts[-3:])
+    return ".".join(parts[-2:])
+
+
+# 错误页 / 反爬挑战页的特征。它们有个共同点：正文里也大量出现「隐私」「政策」这类词
+# （因为站点的页脚还在），所以只靠关键词密度分不出来，必须单独认。
+_ERROR_PAGE = re.compile(
+    r"(页面不存在|页面走丢|找不到(该|此|这个)?页面|您访问的页面|您要找的页面|"
+    r"该页面(已被删除|不存在)|生产环境|"
+    r"\b404\b|\b403\b|not\s*found|page\s+not\s+found|error\s+code|"
+    r"just\s+a\s+moment|attention\s+required|checking\s+your\s+browser|"
+    r"verify\s+you\s+are\s+human|enable\s+javascript\s+and\s+cookies|"
+    r"访问被拒绝|请求被拦截|系统繁忙|服务异常|权限不足)", re.I)
+
+
+def looks_like_error_page(text: str) -> bool:
+    """像是「404 / WAF 挑战 / 登录墙」而不是条款正文。
+
+    实测踩过（2026-11-12 覆盖报告）：
+      - error.taobao.com 的错误页 976 字被当成隐私政策，给了 C 级；
+      - ezg.com 被 Cloudflare 拦住，页面里那条 Cloudflare 自己的隐私政策被算成它的条款。
+    """
+    head = text[:600]
+    if not _ERROR_PAGE.search(head):
+        return False
+    return len(text) < 2500      # 真条款动辄几千字，前 600 字里出现这些词的多半是错误页
+
+
 def find_candidates(html: str, base_url: str, domain: str) -> list[Candidate]:
     soup = BeautifulSoup(html, "lxml")
     seen: dict[str, Candidate] = {}
@@ -170,11 +221,12 @@ def find_candidates(html: str, base_url: str, domain: str) -> list[Candidate]:
             continue
         url = urljoin(base_url, href).split("#")[0]
         host = (urlparse(url).hostname or "").lower()
-        if not (host == domain or host.endswith("." + domain)):
-            # 允许常见的集团法务域（如 taobao → alibaba 的政策页），但降权
-            off = True
-        else:
-            off = False
+        # 只有同一主域（含其子域）的链接才采信。原来是「跨域只扣 3 分」，
+        # 于是 ezg.com 的 Cloudflare 拦截页把 cloudflare.com/privacy 送成了它的条款。
+        # taobao→alibaba 这类同集团跨域会因此丢掉——但宁可少一条，也不要贴错。
+        if base_domain(host) != base_domain(domain):
+            continue
+        off = False
         text = " ".join(a.get_text(" ", strip=True).split())[:80] or a.get("title", "")
         c = classify_link(text, href)
         if not c:
@@ -298,6 +350,8 @@ def looks_like_policy(text: str) -> bool:
     的关键词密度都很低，仍会被挡住。
     """
     if not text or len(text) < 150:
+        return False
+    if looks_like_error_page(text):
         return False
     head = text[:20000]
     hits = len(_POLICY_KEY.findall(head))

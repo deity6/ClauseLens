@@ -67,6 +67,10 @@ app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http
 # 同时进行的分析数上限。每个分析可能拉起一个 Chromium（~480MB），
 # AWS t3.micro 只有 908MB，不设上限时三路并发就会把机器压到 swap。
 _analyze_slots = threading.BoundedSemaphore(3)
+# SSE 的硬上限（秒）：超过它一定发 error 事件而不是静默断开。
+# 观察到的现象：notion.so 那种渲染卡死的站，120 秒过去前端既不拿到 result 也不拿到 error，
+# 只能一直转圈——比报错还糟，因为用户不知道发生了什么。
+ANALYZE_HARD_LIMIT = 100
 # 简单的每 IP 限流：分析 10 次/分钟
 _hits: dict[str, list[float]] = defaultdict(list)
 _fb_hits: dict[str, list[float]] = defaultdict(list)
@@ -146,8 +150,22 @@ async def api_analyze(q: str, request: Request, nocache: int = 0):
     threading.Thread(target=worker, daemon=True).start()
 
     async def stream():
+        # 硬保证：这条流一定会以 result 或 error 结束，绝不静默断开。
+        # 实测踩过（2026-11-12 覆盖报告 s23）：notion.so 渲染卡死后，128 秒过去前端既不
+        # 拿到 result 也不拿到 error，只能一直转圈——比报错更糟，因为用户不知道发生了什么。
+        t0 = time.monotonic()
         while True:
-            item = await queue.get()
+            left = ANALYZE_HARD_LIMIT - (time.monotonic() - t0)
+            if left <= 0:
+                yield ("event: error\ndata: " +
+                       json.dumps({"code": "timeout", "message_zh": "这个站太慢，分析超时了。换个页面或稍后再试"}, ensure_ascii=False) + "\n\n")
+                break
+            try:
+                item = await asyncio.wait_for(queue.get(), timeout=left)
+            except asyncio.TimeoutError:
+                yield ("event: error\ndata: " +
+                       json.dumps({"code": "timeout", "message_zh": "这个站太慢，分析超时了。换个页面或稍后再试"}, ensure_ascii=False) + "\n\n")
+                break
             if item is None:
                 break
             ev, data = item
