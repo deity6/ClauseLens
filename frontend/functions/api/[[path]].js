@@ -3,7 +3,7 @@
 // 为什么需要它：页面在 lens.dohub.tech（CF Pages，静态），后端在 api.dohub.tech:8443（腾讯小机）。
 // 如果让浏览器直接跨域调 8443，既要开 CORS、又会暴露端口；走这层同源代理后，
 // 前端代码里仍然是 `/api/analyze`，SSE 也能原样透传（直接 return fetch(...) 是流式的）。
-const BACKEND = "https://api.dohub.tech:8443";
+const BACKEND = "https://api.dohub.tech";   // 443，Caddy 自动签发的证书
 
 export async function onRequest(context) {
   const { request } = context;
