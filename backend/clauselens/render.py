@@ -11,6 +11,7 @@ index.html 空壳，正文只在浏览器执行 JS 后才出现。静态抓取�
 from __future__ import annotations
 
 import os
+import threading
 
 from .net import UA, Page
 
@@ -21,6 +22,10 @@ RENDER_IDLE_MS = int(os.environ.get("CLAUSELENS_RENDER_IDLE_MS", "1200"))
 
 _disabled = False
 _unavailable_reason = ""
+
+# 全局只允许一个 Chromium 在工作。AWS t3.micro 只有 908MB，两个浏览器实例同时跑
+# 会互相抢内存、双双超时（实测：并发查三个 SPA 站时其中一个必然失败）。
+_RENDER_LOCK = threading.Lock()
 
 
 def available() -> bool:
@@ -99,6 +104,10 @@ class Renderer:
     def render(self, url: str, timeout_ms: int | None = None) -> Page | None:
         if not available():
             return None
+        with _RENDER_LOCK:          # 串行化：宁可排队，也不要两个浏览器抢内存
+            return self._render_inner(url, timeout_ms)
+
+    def _render_inner(self, url: str, timeout_ms: int | None = None) -> Page | None:
         tmo = RENDER_TIMEOUT_MS if timeout_ms is None else max(4000, min(RENDER_TIMEOUT_MS, timeout_ms))
         try:
             if self._ctx is None:

@@ -62,9 +62,31 @@ app.add_middleware(StaticGZip)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
                    allow_methods=["*"], allow_headers=["*"])
 
+# 同时进行的分析数上限。每个分析可能拉起一个 Chromium（~480MB），
+# AWS t3.micro 只有 908MB，不设上限时三路并发就会把机器压到 swap。
+_analyze_slots = threading.BoundedSemaphore(3)
 # 简单的每 IP 限流：分析 10 次/分钟
 _hits: dict[str, list[float]] = defaultdict(list)
 _fb_hits: dict[str, list[float]] = defaultdict(list)
+
+
+
+def _client_ip(request: Request) -> str:
+    """真实客户端 IP。
+
+    生产链路是 浏览器 → lens.dohub.tech(CF Pages Function) → api.dohub.tech，
+    后端直接看到的 request.client.host 是 Cloudflare 边缘节点 IP——实测同一客户端连续三次请求
+    落到 172.71.x / 104.22.x 三个不同地址。拿它当限流键会变成"所有用户共享一个桶"（互相误伤），
+    当投票去重键则完全失效（同一个人可以无限投）。
+
+    CF-Connecting-IP 是 Cloudflare 自己填的真实客户端 IP，优先用它；直连源站（无 CF）时回退到
+    socket 对端，再退到 X-Real-IP（我们自己的 Caddy 会设，但它可能被伪造，所以排最后）。
+    """
+    for h in ("cf-connecting-ip", "x-real-ip"):
+        v = (request.headers.get(h) or "").strip()
+        if v:
+            return v
+    return request.client.host if request.client else "?"
 
 
 def _rate_ok(ip: str, limit=10, window=60, table: dict | None = None) -> bool:
@@ -90,13 +112,21 @@ def taxonomy():
 
 @app.get("/api/analyze")
 async def api_analyze(q: str, request: Request, nocache: int = 0):
-    ip = request.client.host if request.client else "?"
+    ip = _client_ip(request)
     if not _rate_ok(ip):
         msg = {"code": "rate_limited", "message_zh": "查得太快啦，歇一分钟再来"}
 
         async def limited():
             yield f"event: error\ndata: {json.dumps(msg, ensure_ascii=False)}\n\n"
         return StreamingResponse(limited(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
+
+    # 并发闸门：满了就直接回「正在忙」，而不是排队把内存压垮。
+    # 每个分析可能拉起一个 Chromium（~480MB），908MB 的机器经不起三路并行。
+    if not _analyze_slots.acquire(blocking=False):
+        msg = {"code": "busy", "message_zh": "这会儿查的人有点多，等十几秒再试一次"}
+        async def busy():
+            yield f"event: error\ndata: {json.dumps(msg, ensure_ascii=False)}\n\n"
+        return StreamingResponse(busy(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
 
     queue: asyncio.Queue = asyncio.Queue()
     loop = asyncio.get_running_loop()
@@ -107,7 +137,9 @@ async def api_analyze(q: str, request: Request, nocache: int = 0):
                 loop.call_soon_threadsafe(queue.put_nowait, (ev, data))
         except Exception as e:  # noqa
             loop.call_soon_threadsafe(queue.put_nowait, ("error", {"code": "internal", "message_zh": "分析时出了点问题，请稍后再试"}))
-        loop.call_soon_threadsafe(queue.put_nowait, None)
+        finally:
+            _analyze_slots.release()      # 无论成功、失败还是客户端提前断开，都要放回
+            loop.call_soon_threadsafe(queue.put_nowait, None)
 
     threading.Thread(target=worker, daemon=True).start()
 
@@ -172,7 +204,7 @@ def _norm_domain(s: str) -> str:
 
 @app.post("/api/feedback")
 def feedback(fb: Feedback, request: Request):
-    ip = request.client.host if request.client else "?"
+    ip = _client_ip(request)
     if not _rate_ok(f"fb:{ip}", limit=60, window=60, table=_fb_hits):
         raise HTTPException(429, "投得太频繁了，歇一分钟再来")
     if fb.tag_id not in TAG_BY_ID:

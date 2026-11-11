@@ -207,6 +207,37 @@ def guess_doc_type(title: str, url: str, text: str) -> str:
     return "other"
 
 
+# 解析前的硬上限：再大的页面也不是条款（条款正文很少超过 1MB），
+# 而交给 lxml/BeautifulSoup 的代价是指数级上升的。
+MAX_PARSE_CHARS = 2_000_000
+
+
+def _strip_scripts(html: str) -> str:
+    """线性复杂度地剥掉 <script>…</script>。
+
+    **不能用正则** `<script[^>]*>.*?</script>`：只要页面里有一个**未闭合**的 <script>，
+    `.*?` 就会一路回溯到字符串末尾，复杂度退化成 O(n²)。实测 0.48MB 的畸形页面要 86.8 秒，
+    按二次增长外推 5MB 约 2.5 小时——期间 GIL 被占满，uvicorn 单进程等于整个 API 停摆。
+    只要攻击者让自己的域名返回一份含大量 `<script` 的 HTML，一个请求就够（2026-11-12 安全审计 S1）。
+
+    这里改成两指针扫描：找 `<script`、找它之后的第一个 `</script>`、跳过，全程 O(n)。
+    找不到闭合标签时**丢弃剩余全部内容**——那本来就是被截断的脚本。
+    """
+    out, i, n = [], 0, len(html)
+    close = "</script>"
+    while i < n:
+        j = html.find("<script", i)
+        if j < 0:
+            out.append(html[i:])
+            break
+        out.append(html[i:j])
+        k = html.find(close, j)
+        if k < 0:
+            break
+        i = k + len(close)
+    return "".join(out)
+
+
 _BLOCK = {"p", "div", "li", "h1", "h2", "h3", "h4", "h5", "h6", "tr", "section", "article", "br", "dd", "dt", "td", "blockquote", "pre"}
 
 
@@ -218,8 +249,10 @@ def extract_text(html: str) -> tuple[str, str]:
     """
     # 超大页面先用正则把 script 整体删掉再交给解析器：Discourse 的 HTML 有 130 万字符、
     # 其中 90% 是 <script>，BeautifulSoup 建整棵树要好几秒
-    if len(html) > 400_000:
-        html = re.sub(r"<script\b[^>]*>.*?</script>", "", html, flags=re.S | re.I)
+    if len(html) > MAX_PARSE_CHARS:
+        html = html[:MAX_PARSE_CHARS]
+    if "<script" in html:
+        html = _strip_scripts(html)
     soup = BeautifulSoup(html, "lxml")
     title = (soup.title.get_text(strip=True) if soup.title else "")[:120]
     noscript_text = "\n".join(
@@ -230,12 +263,12 @@ def extract_text(html: str) -> tuple[str, str]:
     # 若 article 太短，退回 body
     if len(root.get_text(strip=True)) < 500 and soup.body is not None:
         root = soup.body
+    # 原来对每个 block 节点做 insert_before/insert_after（每个都是一次 DOM 改动，
+    # 几千个节点就是几千次，且每次都要重新定位——也是超时的一部分）。
+    # get_text(separator) 一次遍历即可，行为等价：每个块之间本来就要有换行。
     for br in root.find_all("br"):
         br.replace_with("\n")
-    for el in root.find_all(_BLOCK):
-        el.insert_before("\n")
-        el.insert_after("\n")
-    raw = root.get_text("")
+    raw = root.get_text("\n")
     lines = [" ".join(l.split()) for l in raw.splitlines()]
     lines = [l for l in lines if l]
     # 去掉重复短行（菜单残留）
