@@ -1,60 +1,69 @@
-"""无头浏览器渲染：给纯前端路由的 SPA 兜底。
+"""无头渲染：Lightpanda 为主、Chromium 单进程兜底。
 
-为什么需要：很多站点（Discourse、各种 Vue/React 后台面板）对**任何路径**都返回同一份
-index.html 空壳，正文只在浏览器执行 JS 后才出现。静态抓取拿到的正文可能只有十几个字
-（`cloud.doulor.cn` 的 /、/terms、/privacy 三页返回的 HTML 一模一样，都是 13644 字节、
-提取出 12 个字的 "Doulor Cloud"），再怎么加路径、改正则都读不出来。
+实测（2026-11-12，t3.micro 908 MB）：
+  Lightpanda 1.0.0  48.2 / 118.2 / 81.6 MB，1 进程，1.9 / 2.6 / 4.8 s（doulor / lobehub / blizzard）
+  原 Playwright      537.4 / 684.7 / 617.9 MB，7 进程（其中 100–130 MB 是 node driver）
+所以主路径换成 Lightpanda；它渲染不出来的站（notion.com 这类重客户端 Next.js）回落到
+Chromium --single-process（313.7–359.5 MB，2 进程）。
 
-代价：一次渲染 5–10 秒（启动浏览器 + 页面加载 + 等 networkidle），所以只在
-「静态提取的正文短到明显是空壳」时才调用，而且每次分析有次数上限。
+为什么需要：很多站点对任何路径都返回同一份 index.html 空壳，正文只在浏览器执行 JS 后才出现。
 """
 from __future__ import annotations
 
+import json
 import os
+import re
+import shutil
+import subprocess
 import threading
 
-from .net import UA, Page
+from .net import Page
 
-# 一次分析里最多渲染几个页面（每个 5–10 秒，渲染太多次会把 60 秒预算吃光）
 MAX_RENDERS = int(os.environ.get("CLAUSELENS_MAX_RENDERS", "3"))
 RENDER_TIMEOUT_MS = int(os.environ.get("CLAUSELENS_RENDER_TIMEOUT_MS", "25000"))
 RENDER_IDLE_MS = int(os.environ.get("CLAUSELENS_RENDER_IDLE_MS", "1200"))
 
+# ---- Lightpanda ----------------------------------------------------------
+LP_BIN = os.environ.get("CLAUSELENS_LIGHTPANDA") or shutil.which("lightpanda") or ""
+# 不能传 net.UA：Lightpanda 拒绝任何含 "Mozilla" 的 UA（启动即 fatal: invalid user-agent），
+# 默认 UA 是 Lightpanda/1.0，这里只加后缀。
+LP_UA_SUFFIX = os.environ.get("CLAUSELENS_UA_SUFFIX", " ClauseLens/0.1")
+LP_LOCALE = os.environ.get("CLAUSELENS_LOCALE", "zh-CN")
+LP_WAIT_MS = int(os.environ.get("CLAUSELENS_LP_WAIT_MS", "8000"))
 
-# 启动参数分两档（实测数据，AWS t3.micro，cloud.doulor.cn/privacy）：
-#   --single-process  3 进程 / RSS 280 MB / 2.8s   ← 省，但 Chromium 单进程模式有崩溃概率
-#   常规多进程        6 进程 / RSS 480 MB / 5.9s   ← 稳
-# 策略：默认走省的那套；渲染失败（返回 None）时自动退回稳的那套重试一次。
-_COMMON_ARGS = [
-    "--disable-gpu",
-    "--disable-dev-shm-usage",
-    "--no-sandbox",
-    "--disable-background-networking",
-    "--disable-sync",
-    "--no-first-run",
-    "--disable-extensions",
-    "--metrics-recording-only",
+# ---- Chromium 兜底 ------------------------------------------------------
+PW_ARGS = [
+    "--disable-gpu", "--no-sandbox", "--single-process", "--disable-dev-shm-usage",
+    "--no-zygote", "--renderer-process-limit=1",
+    "--blink-settings=imagesEnabled=false",
+    "--js-flags=--max-old-space-size=96 --max-semi-space-size=2",
+    "--disable-features=site-per-process,IsolateOrigins,Translate,BackForwardCache",
+    "--disable-background-networking", "--disable-component-update", "--disable-breakpad",
 ]
-SINGLE_ARGS = _COMMON_ARGS + ["--single-process", "--js-flags=--max-old-space-size=128"]
-LEAN_ARGS = _COMMON_ARGS + ["--js-flags=--max-old-space-size=160", "--renderer-process-limit=1"]
+MAX_PW_FALLBACK = int(os.environ.get("CLAUSELENS_PW_FALLBACK", "1"))   # 每次分析最多几次兜底
+MIN_FREE_MB = int(os.environ.get("CLAUSELENS_MIN_FREE_MB", "420"))    # 不够就不冒险起 Chromium
 
+# 全局只允许一个渲染任务在跑：908 MB 上两个 180 MB 还行，但两个 Chromium 一定互相挤死
+_RENDER_LOCK = threading.Lock()
 _disabled = False
 _unavailable_reason = ""
 
-# 全局只允许一个 Chromium 在工作。AWS t3.micro 只有 908MB，两个浏览器实例同时跑
-# 会互相抢内存、双双超时（实测：并发查三个 SPA 站时其中一个必然失败）。
-_RENDER_LOCK = threading.Lock()
+
+def _lp_available() -> bool:
+    return bool(LP_BIN) and os.access(LP_BIN, os.X_OK)
 
 
 def available() -> bool:
     global _disabled, _unavailable_reason
     if _disabled:
         return False
+    if _lp_available():
+        return True
     try:
         import playwright.sync_api  # noqa: F401
-    except Exception as e:  # 没装 playwright 就静默降级
+    except Exception as e:
         _disabled = True
-        _unavailable_reason = f"playwright 不可用: {type(e).__name__}"
+        _unavailable_reason = f"lightpanda 与 playwright 都不可用: {type(e).__name__}"
         return False
     return True
 
@@ -63,50 +72,35 @@ def unavailable_reason() -> str:
     return _unavailable_reason
 
 
-def _launch(pw, args=None):
-    """优先用系统已装的 Edge / Chrome，不额外下载 chromium。"""
-    last = None
-    for kw in ({"channel": "msedge"}, {"channel": "chrome"}, {}):
-        try:
-            return pw.chromium.launch(headless=True, args=args or _COMMON_ARGS, **kw)
-        except Exception as e:
-            last = e
-    raise RuntimeError(f"没有可用的浏览器: {last}")
+def _mem_available_mb() -> float:
+    try:
+        for line in open("/proc/meminfo"):
+            if line.startswith("MemAvailable:"):
+                return int(line.split()[1]) / 1024
+    except OSError:
+        pass
+    return 9999.0
 
 
-def render(url: str) -> Page | None:
-    """渲染一个页面，返回执行完 JS 之后的 HTML。失败返回 None。
+_TAG = re.compile(r"<(script|style)\b.*?</\1>|<[^>]+>", re.I | re.S)
 
-    单次调用会新起一个浏览器（约 2–3 秒）。一次分析要渲染多页时用 Renderer 复用。
-    """
-    with Renderer() as r:
-        return r.render(url)
+
+def _visible_text_len(html: str) -> int:
+    """粗算正文长度，只用来判断「是不是还是空壳」，不参与判据。"""
+    txt = _TAG.sub(" ", html)
+    return len(" ".join(txt.split()))
 
 
 class Renderer:
-    """可复用的渲染器：一次分析只启动一次浏览器。
-
-    `cloud.doulor.cn` 这种站首页和条款页都要渲染，每次重开浏览器的话，三次渲染光启动
-    就多花近 10 秒，直接把 60 秒预算吃光，最后一份文档永远抓不到。
-    """
+    """一次分析复用一个实例；Lightpanda 侧没有常驻状态，Chromium 侧按需启动。"""
 
     def __init__(self):
         self._pw = None
         self._browser = None
         self._ctx = None
-        self._single = True      # 是否正在用省内存模式；失败后退回 False
+        self._fallbacks = 0
 
-    def _start(self) -> None:
-        from playwright.sync_api import sync_playwright
-        self._pw = sync_playwright().start()
-        try:
-            self._browser = _launch(self._pw, SINGLE_ARGS if self._single else LEAN_ARGS)
-        except Exception:
-            self._single = False        # 单进程起不来就用多进程
-            self._browser = _launch(self._pw, LEAN_ARGS)
-        self._ctx = self._browser.new_context(
-            user_agent=UA, locale="zh-CN", viewport={"width": 1440, "height": 1000})
-
+    # ---------- 对外 ----------
     def __enter__(self):
         return self
 
@@ -127,46 +121,85 @@ class Renderer:
     def render(self, url: str, timeout_ms: int | None = None) -> Page | None:
         if not available():
             return None
-        with _RENDER_LOCK:          # 串行化：宁可排队，也不要两个浏览器抢内存
-            page = self._render_inner(url, timeout_ms)
-            if page is None and self._single:
-                # 单进程模式对某些页面会崩（这是它唯一的代价）。崩了就把这套实例丢掉，
-                # 换成稳定的多进程模式重来一次——慢 ~3 秒，但不会再失败。
-                self._single = False
-                self.close()
-                page = self._render_inner(url, timeout_ms)
-            return page
-
-    def _render_inner(self, url: str, timeout_ms: int | None = None) -> Page | None:
         tmo = RENDER_TIMEOUT_MS if timeout_ms is None else max(4000, min(RENDER_TIMEOUT_MS, timeout_ms))
+        with _RENDER_LOCK:
+            page = self._render_lightpanda(url, tmo)
+            if page is not None and _visible_text_len(page.text) >= 400:
+                return page
+            # 还是空壳（或 Lightpanda 不在）→ 用 Chromium 补一次，但要先确认内存够
+            if not _lp_available():
+                return self._render_chromium(url, tmo) or page
+            if self._fallbacks >= MAX_PW_FALLBACK or _mem_available_mb() < MIN_FREE_MB:
+                return page
+            self._fallbacks += 1
+            return self._render_chromium(url, tmo) or page
+
+    # ---------- Lightpanda ----------
+    def _render_lightpanda(self, url: str, tmo_ms: int) -> Page | None:
+        cmd = [
+            LP_BIN, "fetch", "--json", "--dump", "html", url,
+            "--locale", LP_LOCALE,
+            "--wait-until", "networkidle", "--wait-ms", str(LP_WAIT_MS),
+            "--load-resources", "stylesheet",
+            "--block-private-networks",
+            "--user-agent-suffix", LP_UA_SUFFIX,
+            "--terminate-ms", str(tmo_ms),
+        ]
+        try:
+            p = subprocess.run(cmd, capture_output=True, timeout=tmo_ms / 1000 + 5)
+        except (OSError, subprocess.TimeoutExpired):
+            return None
+        if p.returncode != 0:
+            # 导航/等待失败（若加 --fail-on-http-error，HTTP 4xx/5xx 也会是 22）
+            return None
+        try:
+            obj = json.loads(p.stdout.decode("utf-8", "replace"))
+        except ValueError:
+            return None
+        html = obj.get("content") or ""
+        if len(html) < 200:
+            return None
+        return Page(url, int(obj.get("http_status") or 200), "text/html; charset=utf-8", html)
+
+    # ---------- Chromium 兜底 ----------
+    def _start_chromium(self) -> None:
+        from playwright.sync_api import sync_playwright
+        self._pw = sync_playwright().start()
+        for kw in ({"channel": "chromium"}, {}):      # channel="chromium" 才是完整 chromium
+            try:
+                self._browser = self._pw.chromium.launch(headless=True, args=PW_ARGS, **kw)
+                break
+            except Exception:
+                continue
+        if self._browser is None:
+            raise RuntimeError("Chromium 起不来")
+        self._ctx = self._browser.new_context(
+            locale=LP_LOCALE, viewport={"width": 1440, "height": 1000})
+
+    def _render_chromium(self, url: str, tmo_ms: int) -> Page | None:
         try:
             if self._ctx is None:
-                self._start()
+                self._start_chromium()
             page = self._ctx.new_page()
             try:
-                # 图片/媒体/字体一律不加载：条款正文是纯文本，加载它们只会拖慢
-                page.route("**/*", lambda route: route.abort()
-                           if route.request.resource_type in ("image", "media", "font") else route.continue_())
-                resp = None
+                page.route("**/*", lambda r: r.abort()
+                           if r.request.resource_type in ("image", "media", "font") else r.continue_())
+                resp = page.goto(url, wait_until="domcontentloaded", timeout=tmo_ms)
                 try:
-                    resp = page.goto(url, wait_until="domcontentloaded", timeout=tmo)
-                except Exception:
-                    return None
-                try:
-                    page.wait_for_load_state("networkidle", timeout=min(RENDER_IDLE_MS, tmo // 3))
+                    page.wait_for_load_state("networkidle", timeout=min(RENDER_IDLE_MS, tmo_ms // 3))
                 except Exception:
                     pass
                 page.wait_for_timeout(300)
                 html = page.content()
-                status = getattr(resp, "status", 200) or 200
-                return Page(url, int(status), "text/html; charset=utf-8", html)
+                return Page(url, int(getattr(resp, "status", 200) or 200),
+                            "text/html; charset=utf-8", html)
             finally:
                 try:
                     page.close()
                 except Exception:
                     pass
         except Exception:
-            self.close()   # 浏览器崩了就丢弃，下次重开
+            self.close()
             return None
 
 
@@ -182,3 +215,9 @@ class Budget:
             return False
         self.used += 1
         return True
+
+
+def render(url: str, timeout_ms: int | None = None) -> Page | None:
+    """单页一次性渲染（会新起一个进程）。多次渲染请用 Renderer 复用。"""
+    with Renderer() as r:
+        return r.render(url, timeout_ms)

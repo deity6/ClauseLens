@@ -123,11 +123,16 @@ except Exception:                                          # pragma: no cover
 
 
 # ─────────────────────────────────────────────────────────────── SSE 单次调用
-def sse_call(query: str, read_timeout: float = 200.0, busy_wait: float = 15.0,
-             max_tries: int = 2) -> dict:
+# 服务侧两个闸门（backend/clauselens/api.py）：并发上限 3（超了回 busy），
+# 以及每 IP 10 次/60 s 的滑动窗口（超了回 rate_limited）。撞上去只能干等，
+# 所以本地先按同一节奏排队。
+RETRY_AFTER = {"busy": 15.0, "rate_limited": 62.0}
+
+
+def sse_call(query: str, read_timeout: float = 200.0, max_tries: int = 2) -> dict:
     """跑一次 /api/analyze，返回 {ok, code, status, documents, stages, elapsed, ...}。
 
-    只有 busy 会重试（服务并发满时的正常反馈，不是站点问题）。
+    busy / rate_limited 是服务自己的闸门反馈，不是站点问题，等一会儿重试。
     """
     out: dict = {"q": query, "ok": False, "code": None, "status": None,
                  "documents": [], "stages": [], "elapsed": None, "tries": 0,
@@ -165,11 +170,44 @@ def sse_call(query: str, read_timeout: float = 200.0, busy_wait: float = 15.0,
         err = res["error"] or {}
         out.update(code=err.get("code") or "no_result",
                    status=err.get("status"), error_zh=err.get("message_zh"))
-        if out["code"] == "busy" and attempt < max_tries:
-            time.sleep(busy_wait)          # 并发满：等 15 s 再来一次
+        if out["code"] in RETRY_AFTER and attempt < max_tries:
+            wait = RETRY_AFTER[out["code"]]
+            print(f"        [retry] {out['code']}，等 {wait:.0f}s 重试", flush=True)
+            time.sleep(wait)
             continue
         return out
     return out
+
+
+class Pacer:
+    """按服务的限流节奏排队：默认 10 次/60 s 滑动窗口 + 最小间隔。
+
+    贴着上限打会频繁吃 rate_limited，留 1 次余量（实际 9 次/窗口）。
+    """
+
+    def __init__(self, per_window: int = 10, window: float = 60.0, min_interval: float = 1.0):
+        self.per = max(1, per_window - 1)
+        self.window = window
+        self.min_interval = max(1.0, min_interval)
+        self.hits: list[float] = []
+        self.last = 0.0
+
+    def wait(self) -> None:
+        now = time.monotonic()
+        gap = self.min_interval - (now - self.last)
+        if gap > 0:
+            time.sleep(gap)
+            now = time.monotonic()
+        self.hits = [h for h in self.hits if now - h < self.window]
+        while len(self.hits) >= self.per:
+            need = self.window - (now - self.hits[0]) + 0.3
+            if need > 0:
+                print(f"        [pacer] 已用满 {self.per} 次/{self.window:.0f}s，等 {need:.1f}s", flush=True)
+                time.sleep(need)
+            now = time.monotonic()
+            self.hits = [h for h in self.hits if now - h < self.window]
+        self.hits.append(now)
+        self.last = time.monotonic()
 
 
 def _sse_once(query: str, read_timeout: float) -> dict:
@@ -348,6 +386,10 @@ def cmd_run(args) -> int:
         print(f"# 续跑：已完成 {len(done)} 条", flush=True)
 
     print(f"# API={API}  站点={len(sites)}  判据={JUDGE}", flush=True)
+    pacer = Pacer(per_window=args.rate_limit, window=args.rate_window,
+                  min_interval=args.interval)
+    print(f"# 节流：{pacer.per} 次/{pacer.window:.0f}s 滑动窗口，最小间隔 "
+          f"{pacer.min_interval:.1f}s（服务限 10 次/60s/IP）", flush=True)
     n = 0
     for s in sites:
         for mode in ("fuzzy", "precise"):
@@ -358,7 +400,8 @@ def cmd_run(args) -> int:
             if (s["id"], mode) in done:
                 continue
             n += 1
-            res = sse_call(q, read_timeout=args.timeout, busy_wait=args.busy_wait)
+            pacer.wait()
+            res = sse_call(q, read_timeout=args.timeout)
             rec = {"ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                    "site_id": s["id"], "name": s.get("name"), "category": s.get("category"),
                    "domain": s["domain"], "mode": mode, "q": q, **res}
@@ -370,8 +413,6 @@ def cmd_run(args) -> int:
             stages = " > ".join(str(st.get("stage")) for st in rec["stages"])
             print(f"{s['id']} {mode:<8} {flag:<16} {rec['elapsed']:>6}s  {extra}", flush=True)
             print(f"        stages: {stages[:160]}", flush=True)
-            if n < args.max_calls:
-                time.sleep(args.interval)     # 串行 + 间隔，别触发并发上限
         if args.max_calls and n >= args.max_calls:
             print(f"# 达到 --max-calls={args.max_calls}，先停", flush=True)
             break
@@ -478,27 +519,30 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--sites", default=DEFAULT_SITES, help="站点表 JSON")
-    ap.add_argument("--interval", type=float, default=1.5, help="两次请求间隔秒（>=1）")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     p = sub.add_parser("probe", help="探测条款路径")
     p.add_argument("--only", default="")
     p.add_argument("--deep", action="store_true", help="即使找到链接也探常见路径")
+    p.add_argument("--interval", type=float, default=1.5, help="两次探测间隔秒")
     p.set_defaults(func=cmd_probe)
 
     r = sub.add_parser("run", help="跑覆盖矩阵")
     r.add_argument("--out", default=os.path.join(PROJ, "out", "coverage.jsonl"))
     r.add_argument("--timeout", type=float, default=200.0)
-    r.add_argument("--busy-wait", type=float, default=15.0)
     r.add_argument("--only", default="")
     r.add_argument("--max-calls", type=int, default=0)
     r.add_argument("--resume", action="store_true")
+    r.add_argument("--interval", type=float, default=1.0, help="两次请求最小间隔秒（>=1）")
+    r.add_argument("--rate-limit", type=int, default=10, help="每窗口允许的请求数（服务限 10/60s）")
+    r.add_argument("--rate-window", type=float, default=60.0, help="限流窗口秒")
     r.set_defaults(func=cmd_run)
 
     d = sub.add_parser("diagnose", help="失败根因诊断")
     d.add_argument("--results", required=True)
     d.add_argument("--only-codes", default="")
     d.add_argument("--out", default="")
+    d.add_argument("--interval", type=float, default=1.5)
     d.set_defaults(func=cmd_diagnose)
 
     rp = sub.add_parser("report", help="生成 markdown 总表")
@@ -506,7 +550,8 @@ def main() -> int:
     rp.set_defaults(func=cmd_report)
 
     args = ap.parse_args()
-    args.interval = max(1.0, args.interval)
+    if hasattr(args, "interval"):
+        args.interval = max(1.0, args.interval)
     return args.func(args)
 
 
