@@ -22,3 +22,7 @@ data/models/
 .cc-import/
 # Claude Code / 编辑器本地配置
 .claude/
+
+# wrangler 的本地缓存与构建临时文件
+.wrangler/
+frontend/.wrangler/
