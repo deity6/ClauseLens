@@ -300,15 +300,18 @@ NodeLoc 是 Discourse 论坛：服务端 HTML 1,170,900 字符，其中 `<script
 
 三条必修，已全部修完并实测：
 
-- **S1（严重，我自己引入的）**：为提速加的 e.sub(r"<script[^>]*>.*?</script>") 在页面含
+- **S1（严重，我自己引入的）**：为提速加的 
+e.sub(r"<script[^>]*>.*?</script>") 在页面含
   **未闭合 <script>** 时退化成 O(n²)——0.48MB 畸形页面要 86.8 秒，期间 GIL 占满、整个 API 失联，
   一个请求就能打瘫。改成两指针线性扫描 _strip_scripts()，并加 2MB 解析上限。
   顺带把「逐节点 insert_before/insert_after」换成一次 get_text("\n")。
   **实测：86.8s → 0.00s**，正常页面提取质量不变。
-- **H1（高）**：投票去重与限流用 equest.client.host，但生产链路是 CF Pages Function 代理，
+- **H1（高）**：投票去重与限流用 
+equest.client.host，但生产链路是 CF Pages Function 代理，
   后端看到的是 Cloudflare 边缘 IP（同一客户端三次落在三个不同 IP），去重完全失效。
   改成优先读 CF-Connecting-IP。实测：连投 3 次现在是 200/409/409。
-- **H2（高）**：没有请求体上限、没有并发上限。Caddy 加 equest_body max_size 256KB
+- **H2（高）**：没有请求体上限、没有并发上限。Caddy 加 
+equest_body max_size 256KB
   （实测 30 万字符 POST → 413），后端加 _analyze_slots = BoundedSemaphore(3)
   （实测 5 路并发 → 3 成功 + 2 立即 busy）。
 
@@ -331,3 +334,47 @@ XFF 伪造、快照路径穿越，含 tcpdump 验证）。
 
 三个 SPA 站实测（nocache）：cloud.doulor.cn 10.3s / lobehub.com 16.0s / ow.blizzard.cn 17.8s，
 全部成功；服务内存 571 → 484 MB（可用从 337 升到 424）。
+
+
+## 2026-11-12 深夜 · 按覆盖报告修四项
+
+`docs/reviews/2026-11-12-coverage.md` 把真实覆盖率拆穿成 42.5%（模糊）/ 56.8%（精确）——
+表面 80% 里近一半是靠预存快照撑的。按报告建议逐项修：
+
+### 1. 三类「假成功」
+
+- **错误页被当条款**：`error.taobao.com` 的错误页 976 字给了 C 级。新增
+  `discover.looks_like_error_page()`：前 600 字命中「页面不存在 / 404 / Just a moment /
+  checking your browser / 访问被拒绝」且总长 < 2500 就判否。构造样本实测：错误页 712 字 → False，
+  真条款 750 字 → True。
+- **跨站 WAF 页**：ezg.com 被 Cloudflare 拦住，页面里那条 Cloudflare 自己的隐私政策被算成它的条款
+  （还缓存 24h）。根因是 `find_candidates` 对跨域只扣 3 分。改成**主域不同直接不采信**
+  （新增 `base_domain()`，`ow.blizzard.cn` 与 `wow.blizzard.cn` 都归到 `blizzard.cn`，仍算同家）。
+- **首页短内容**：alipay 精确模式命中首页 185 字，判成 C 级。加规则：根路径 + 正文 < 800 字直接跳过。
+
+### 2. 裸域 vs www
+
+`pipeline.py` 首页抓取失败时自动换 `www.` 变体（反之亦然）。实测救回：
+
+| 站点 | 修前 | 修后 |
+|---|---|---|
+| cosmoplat-aiot.com | not_found | D51 · 2 份 · 24,487 字 |
+| appinn.net | not_found | C61 · 1 份 |
+
+### 3. 中文路径
+
+`COMMON_PATHS` 38 → 69 条，补了 11 条中文语义路径（`/隐私政策` `/用户协议` `/服务协议`
+`/法律声明` …）和国内常见的协议中心结构（`/info/privacy` `/site/terms` `/company/privacy`）。
+同时把「首页已发现候选时的探测预算」从 14 提到 22——原来 14 条正好把排在后面的中文路径挤掉。
+
+### 4. 渲染空壳 + SSE 终结
+
+- 渲染跑过、正文仍 < 400 字时记 `render_empty`，最终错误消息改成「渲染过了但拿到的仍然不是条款」，
+  不再笼统说「可能没有公开条款」。
+- `api.py` 的 SSE 流加 `ANALYZE_HARD_LIMIT = 100` 秒硬上限：超时一定发 `error` 事件。
+  之前 notion.so 渲染卡死后 128 秒静默断开，前端只能一直转圈。
+
+### 踩坑
+
+`ANALYZE_HARD_LIMIT` 第一次没定义成功（替换锚点被前一次改动改掉了），服务起来后 SSE 直接抛
+`NameError`、整条流返回空——这类「改了但没生效」只能靠起完服务立刻打一次接口才发现。
