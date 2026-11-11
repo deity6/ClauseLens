@@ -190,6 +190,8 @@ def base_domain(host: str) -> str:
 
 # 错误页 / 反爬挑战页的特征。它们有个共同点：正文里也大量出现「隐私」「政策」这类词
 # （因为站点的页脚还在），所以只靠关键词密度分不出来，必须单独认。
+_URL_POLICY_HINT = re.compile(r"/(privacy|terms|legal|policy|polity|agreement|tos|eula|gdpr)([./-]|$)", re.I)
+
 _ERROR_PAGE = re.compile(
     r"(页面不存在|页面走丢|找不到(该|此|这个)?页面|您访问的页面|您要找的页面|"
     r"该页面(已被删除|不存在)|生产环境|"
@@ -341,7 +343,7 @@ _POLICY_KEY = re.compile(
     r"personal (?:data|information)|privacy|terms|agree|third part|user data|service", re.I)
 
 
-def looks_like_policy(text: str) -> bool:
+def looks_like_policy(text: str, url: str = "") -> bool:
     """判断一段正文像不像条款/隐私政策。
 
     以前是硬门槛「至少 600 字 + 8 个关键词」，于是写得简洁的条款页全被判死
@@ -349,12 +351,23 @@ def looks_like_policy(text: str) -> bool:
     现在短页面不再一刀切，改为要求**更高的关键词密度**——404 页、登录页、空白壳
     的关键词密度都很低，仍会被挡住。
     """
-    if not text or len(text) < 150:
+    # 150 字的下限挡掉过真正简短的声明：lobste.rs 的隐私政策正文只有 125 字，
+    # 内容是真的（"我们不收集…"那种极简声明），却被门槛卡掉（2026-11-12 覆盖报告 s39）。
+    # 放到 100 字，同时把短页的关键词密度要求提上去，免得放过导航页。
+    if not text or len(text) < 100:
         return False
     if looks_like_error_page(text):
         return False
+    # URL 自己就写着 /privacy、/terms：用户点进去（或自己贴过来）的，只要正文不是空壳
+    # 就采信。lobste.rs 的隐私声明只有 125 字，还是「This is the Internet, you have no privacy.」
+    # 这种口语，关键词密度天然低，纯靠密度判会被误杀（覆盖报告 s39）。
+    if url and _URL_POLICY_HINT.search(urlparse(url).path or "") and len(text) >= 100:
+        return True
     head = text[:20000]
     hits = len(_POLICY_KEY.findall(head))
+    if len(text) < 160:
+        # 100–160 字的极简声明：几乎每一句都要沾条款词汇才算
+        return hits >= 3 and hits * 100 >= len(head)
     if len(text) < 600:
         # 150–600 字的短页：每 150 字至少命中 1 个关键词，且总数 ≥ 4
         return hits >= 4 and hits * 150 >= len(head)

@@ -347,7 +347,7 @@ def _analyze(raw: str, use_cache: bool, rr) -> "object":
                         ptitle, text = rt2, rtext
                     elif len(rtext) < 400:
                         render_empty += 1
-            if snap and not discover.looks_like_policy(text):
+            if snap and not discover.looks_like_policy(text, page.url):
                 raise net.FetchError("spa", "脚本渲染页面")
             used_snapshot = None
         except net.FetchError as e:
@@ -363,7 +363,7 @@ def _analyze(raw: str, use_cache: bool, rr) -> "object":
                 if (c.doc_type in ("privacy", "terms") and c.url.rstrip("/") not in seen_url
                         and c.score >= 12 and not GENERIC_ANCHOR.search(c.title)):
                     queue.append((c.url, c.title, c.doc_type, 1))
-        if not discover.looks_like_policy(text):
+        if not discover.looks_like_policy(text, page.url):
             continue
         # 首页本身很少是条款页：它的正文是「欢迎/介绍/导航」，页脚那段隐私小字会被算进去。
         # 实测 alipay 精确模式命中首页 185 字，还被判成 C 级（2026-11-12 覆盖报告 s36）。
