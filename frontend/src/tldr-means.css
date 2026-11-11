@@ -1,0 +1,19 @@
+/* 「一句话总结」每句下面那行小字：条款对你实际意味着什么（后端 means_zh）。
+   只有 Result.jsx 的 TL;DR 用，class 固定为 small.tldr-means（main.jsx 里统一 import）。 */
+small.tldr-means {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  font-style: normal;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+/* .tldr__item 本身是 flex（圆点 + 文字），句子和小字被 Result.jsx 包进 .tldr__line。
+   这一条只让它占满圆点右边的剩余宽度，并能正常换行收窄。 */
+.tldr__item > .tldr__line {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+}

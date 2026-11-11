@@ -1,0 +1,218 @@
+[
+ {
+  "id": "collects-sensitive",
+  "polarity": "bad",
+  "name_zh": "收集敏感个人信息",
+  "explain_zh": "会收集身份证号、人脸、指纹、精确位置、健康等敏感信息，泄露后伤害更大。"
+ },
+ {
+  "id": "collects-contacts-device",
+  "polarity": "bad",
+  "name_zh": "读取通讯录或设备信息",
+  "explain_zh": "可能读取你的通讯录、相册、剪贴板、已安装应用列表或设备标识。"
+ },
+ {
+  "id": "tracks-across-sites",
+  "polarity": "bad",
+  "name_zh": "跨站追踪你",
+  "explain_zh": "使用 Cookie、像素、SDK 等技术在其他网站或应用中追踪你的行为。"
+ },
+ {
+  "id": "personalized-ads",
+  "polarity": "bad",
+  "name_zh": "用你的数据推送广告",
+  "explain_zh": "会根据你的浏览、购买等行为给你推送个性化广告。"
+ },
+ {
+  "id": "collects-beyond-service",
+  "polarity": "bad",
+  "name_zh": "收集范围超出必要",
+  "explain_zh": "收集的信息超出提供服务所必需的范围，或用于与服务无关的目的。"
+ },
+ {
+  "id": "data-minimization",
+  "polarity": "good",
+  "name_zh": "只收集必要信息",
+  "explain_zh": "明确承诺只收集提供服务所必需的最少信息。"
+ },
+ {
+  "id": "no-tracking",
+  "polarity": "good",
+  "name_zh": "不追踪、不做广告画像",
+  "explain_zh": "明确表示不使用追踪技术或不用于广告。"
+ },
+ {
+  "id": "data-sold-or-shared",
+  "polarity": "bad",
+  "name_zh": "可能把你的数据给第三方",
+  "explain_zh": "条款允许把你的个人信息提供给合作方、广告商或关联公司。"
+ },
+ {
+  "id": "not-sold",
+  "polarity": "good",
+  "name_zh": "承诺不出售你的数据",
+  "explain_zh": "明确写明不会出售或出租你的个人信息。"
+ },
+ {
+  "id": "cross-border-transfer",
+  "polarity": "neutral",
+  "name_zh": "数据可能传到境外",
+  "explain_zh": "你的数据可能被传输到其他国家或地区存储和处理，那里的保护水平可能不同。"
+ },
+ {
+  "id": "gov-disclosure",
+  "polarity": "neutral",
+  "name_zh": "按要求向政府提供数据",
+  "explain_zh": "在政府、司法机关要求下会提供你的数据（大多数服务都有）。"
+ },
+ {
+  "id": "notify-breach",
+  "polarity": "good",
+  "name_zh": "数据泄露会通知你",
+  "explain_zh": "发生数据安全事件时会告知你。"
+ },
+ {
+  "id": "can-delete-data",
+  "polarity": "good",
+  "name_zh": "可以删除你的数据",
+  "explain_zh": "你可以要求删除个人信息。"
+ },
+ {
+  "id": "can-export-data",
+  "polarity": "good",
+  "name_zh": "可以导出你的数据",
+  "explain_zh": "你可以获取或导出自己的数据副本。"
+ },
+ {
+  "id": "easy-account-deletion",
+  "polarity": "good",
+  "name_zh": "可以注销账号",
+  "explain_zh": "提供了注销账号的方式。"
+ },
+ {
+  "id": "hard-account-deletion",
+  "polarity": "bad",
+  "name_zh": "注销账号很麻烦",
+  "explain_zh": "注销账号条件苛刻或流程繁琐，或注销后数据仍会保留。"
+ },
+ {
+  "id": "indefinite-retention",
+  "polarity": "bad",
+  "name_zh": "数据保存时间不明确",
+  "explain_zh": "没有说明保存多久，或在你删除后仍长期保留。"
+ },
+ {
+  "id": "clear-retention",
+  "polarity": "good",
+  "name_zh": "写明了保存多久",
+  "explain_zh": "明确给出了数据保存的具体期限。"
+ },
+ {
+  "id": "contact-dpo",
+  "polarity": "good",
+  "name_zh": "有个人信息保护联系人",
+  "explain_zh": "提供了个人信息保护负责人或隐私问题的联系方式。"
+ },
+ {
+  "id": "minors-protection",
+  "polarity": "good",
+  "name_zh": "专门保护未成年人",
+  "explain_zh": "对儿童/未成年人信息有专门的保护规则。"
+ },
+ {
+  "id": "terms-change-no-notice",
+  "polarity": "bad",
+  "name_zh": "可以随时改条款不通知你",
+  "explain_zh": "平台可以单方面修改条款，且不一定通知你，继续使用就视为同意。"
+ },
+ {
+  "id": "terms-change-notice",
+  "polarity": "good",
+  "name_zh": "改条款会提前通知你",
+  "explain_zh": "修改条款前会提前通知你，给你时间决定是否继续使用。"
+ },
+ {
+  "id": "account-termination-anytime",
+  "polarity": "bad",
+  "name_zh": "可以随时封你的号",
+  "explain_zh": "平台可以按自己的判断随时暂停或终止你的账号，理由宽泛。"
+ },
+ {
+  "id": "content-removal-discretion",
+  "polarity": "neutral",
+  "name_zh": "可以删除你发布的内容",
+  "explain_zh": "平台可以自行决定删除你发布的内容。"
+ },
+ {
+  "id": "default-consent",
+  "polarity": "bad",
+  "name_zh": "使用即视为同意",
+  "explain_zh": "只要你使用服务（或注册、点击）就被视为同意全部条款。"
+ },
+ {
+  "id": "final-interpretation",
+  "polarity": "bad",
+  "name_zh": "解释权归平台",
+  "explain_zh": "条款写明「最终解释权」归平台所有——在中国这类表述通常属于无效格式条款。"
+ },
+ {
+  "id": "no-automated-access",
+  "polarity": "neutral",
+  "name_zh": "禁止爬虫和自动访问",
+  "explain_zh": "禁止使用爬虫、机器人等自动化方式访问服务。"
+ },
+ {
+  "id": "broad-liability-waiver",
+  "polarity": "bad",
+  "name_zh": "出了问题平台不负责",
+  "explain_zh": "大量免除平台的责任——即使服务出错、数据丢失，平台也可能不赔。"
+ },
+ {
+  "id": "liability-cap",
+  "polarity": "bad",
+  "name_zh": "赔偿金额有上限",
+  "explain_zh": "即使平台有责任，赔偿也被限制在很低的金额（如你付过的费用）。"
+ },
+ {
+  "id": "forced-arbitration",
+  "polarity": "bad",
+  "name_zh": "纠纷只能走仲裁",
+  "explain_zh": "发生纠纷时你不能去法院起诉，只能按平台指定的方式仲裁。"
+ },
+ {
+  "id": "class-action-waiver",
+  "polarity": "bad",
+  "name_zh": "不能参加集体诉讼",
+  "explain_zh": "你放弃了和其他用户一起集体起诉平台的权利。"
+ },
+ {
+  "id": "far-jurisdiction",
+  "polarity": "bad",
+  "name_zh": "打官司要去平台所在地",
+  "explain_zh": "约定纠纷由平台所在地（或境外）法院管辖，你维权成本更高。"
+ },
+ {
+  "id": "user-indemnifies",
+  "polarity": "bad",
+  "name_zh": "你要替平台赔偿",
+  "explain_zh": "如果有人因你的行为起诉平台，你需要承担平台的损失和律师费。"
+ },
+ {
+  "id": "broad-content-license",
+  "polarity": "bad",
+  "name_zh": "你的内容平台可以随便用",
+  "explain_zh": "你上传的内容，平台获得免费、永久、可转授权的使用权。"
+ },
+ {
+  "id": "you-own-content",
+  "polarity": "good",
+  "name_zh": "内容版权归你",
+  "explain_zh": "你发布的内容版权仍归你所有。"
+ },
+ {
+  "id": "ai-training",
+  "polarity": "bad",
+  "name_zh": "可能用你的内容训练 AI",
+  "explain_zh": "你的内容或数据可能被用于训练人工智能/机器学习模型。"
+ }
+]

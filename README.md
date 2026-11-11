@@ -1,0 +1,122 @@
+# ClauseLens 条款透镜
+
+> 注册前，先看看你同意了什么。
+
+输入一个网站（`baidu.com`）或条款页面网址（`https://www.baidu.com/duty/yinsiquan-policy.html`），
+ClauseLens 会找到它的隐私政策 / 用户协议，逐条阅读，给出 **A–E 等级 + 0–100 分 + 标签 + 原文证据 + 所在法域的必备项检查**，
+用户还可以对每个标签投「认同 / 不认同」。
+
+> 结果由程序自动分析，仅供参考，不构成法律意见。
+
+## 快速开始（Windows，bash / Git Bash，整块粘贴）
+
+```bash
+cd "E:/deepseek harness/ClauseLens-条款透镜"
+pip install -r requirements.txt                                              # 首次（版本已锁）
+cd frontend && npm install && npm run build && cd ..                         # 首次或改前端后
+python -m uvicorn clauselens.api:app --app-dir backend --port 8787
+```
+
+浏览器打开 <http://localhost:8787>。离线演示：<http://localhost:8787/?demo=baidu>、`?demo=github`。
+
+前端开发模式（热更新，另开一个终端）：`cd frontend && npm run dev` → <http://localhost:5173>（`/api` 自动代理到 8787）。
+
+## 命令行查单个站点
+
+不起服务也能查，直接在终端出结论：
+
+```bash
+python scripts/query.py baidu.com                    # 排版好的结果
+python scripts/query.py github.com --json > out.json # 完整数据（含原文）
+python scripts/query.py v2ex.com -v                  # 同时显示抓取过程
+python scripts/query.py bilibili.com --no-cache      # 绕过 24 小时缓存
+```
+
+等价写法（在 `backend/` 目录下）：`python -m clauselens baidu.com`。
+
+想知道一批站点的成功率：
+
+```bash
+python scripts/probe_sites.py                    # 内置 40 个站
+python scripts/probe_sites.py --file mylist.txt  # 自己列，每行一个域名
+```
+
+失败时退出码 2，成功 0——可以接进 shell 脚本。
+
+## 它是怎么工作的
+
+```
+输入 → 解析(模糊/精准) → 发现条款(已收录直链 / 首页链接打分 / 二跳 / 常见路径)
+     → 安全抓取(SSRF 防护, 5MB/20s 上限) → 正文提取 → 分句
+     → 识别：规则层(中英正则) + 模型层(TF-IDF+LR，英文用 ToS;DR 标注、中文用人工标注) 融合
+     → 评分：在 ToS;DR 人工等级上标定的标签惩罚 → 0–100 → A–E；六维雷达分
+     → 法域：TLD / ICP 备案 / 引用法律 → CN/EU/US/UK/... 必备项检查(只报“找到/未找到”)
+     → SSE 逐阶段推送 → 前端
+```
+
+36 个标签分 6 个维度（隐私收集 / 数据共享 / 你的权利 / 平台权力 / 责任与纠纷 / 内容归属），定义见
+`backend/clauselens/taxonomy.py`；ToS;DR case → 标签的人工映射见 `backend/clauselens/tosdr_map.py`。
+
+## 数据（详见 `data/processed/CORPUS.md`）
+
+| 来源 | 规模 | 用途 | 许可 |
+|---|---|---|---|
+| ToS;DR（Zenodo 整库导出 + API） | 2,819 站点；22,497 条人工标注原文引用；2,211 个有评级站点的 4,960 份条款全文 | 英文训练 / 站点级评测 / 评分标定 | GPL-3.0（Zenodo）/ CC BY-SA（API） |
+| Open Terms Archive | 790 服务、2,544 份文档 | 英文全文语料 | ODC-BY 1.0 |
+| 自抓中文站点 | 187 站、486 份文档 | 中文语料 + 已收录站点快照 | 原站版权，仅研究分析 |
+| 人工标注中文句（本项目） | 2,800 句（train 2,000 / dev 400 / test 400） | 中文训练与评测 | 本项目 |
+| CAPP-130 | 130 App、38,889 句 | 中文主题级评测 | CC BY 4.0 |
+
+## 评测（全部由脚本生成，见 `eval/reports/`）
+
+划分一律**按站点**，test 站点从不参与训练、调阈值或评分标定。
+
+| 评测 | 数据 | 结果 |
+|---|---|---|
+| 英文句子级（31 标签） | ToS;DR test：354 站 / 4,154 句 | micro P **0.77** / R 0.70 / F1 **0.74**（仅规则 F1 0.29） |
+| 中文句子级（23 标签） | 人工标注 test：27 站 / 330 句（已去泄漏） | micro P **0.65** / R 0.55 / F1 **0.59**（仅规则 F1 0.43） |
+| 站点等级 | ToS;DR test：443 站 | 完全一致 **50%**（多数类基线 43%），相差≤1 级 **94%**，Spearman 0.50 |
+
+复跑：
+
+```bash
+python scripts/train_model.py        # 英文模型 + sentence_eval.md（~30s）
+python scripts/train_model_zh.py     # 中文模型 + zh_model_eval.md（~10s）
+python scripts/calibrate_score.py    # 评分标定（只用 train 站点，首次 ~5min）
+python scripts/eval_sites.py eval    # 站点级评测（~5min）
+python scripts/eval_zh.py test       # 中文规则层 + CAPP-130 主题级
+```
+
+数据重建：`scripts/harvest_tosdr.py`、`scripts/build_dataset.py`、`scripts/harvest_cn.py`、`scripts/build_ota.py`、`scripts/build_registry.py`。
+
+## 目录
+
+见 `AGENTS.md`（项目总纲、子代理分工、审查清单、红线）。接口契约：`docs/design/contract.md`。
+调研：`docs/research/`。审查报告：`docs/reviews/`。进度：`docs/PROGRESS.md`。
+
+## 网络受限怎么办（可选出口）
+
+默认是纯直连。但有些站点的域名在本机被 DNS 污染（`signal.org` 解析到 `31.13.90.33`、
+`duckduckgo.com` 解析到 `108.160.169.175`），或者 TCP 建连后被 SNI 阻断，直连永远拿不到内容，
+只会报「连不上」。
+
+配一个境外出口就能救回来，直连**成功时完全不经过它**：
+
+```powershell
+# 1) 借 InstaBox 云容器的 exec 跑 curl —— 不发布端口、无常驻进程
+$env:CLAUSELENS_EGRESS = "instabox:<machine-id>"
+
+# 2) 或者自己起一个 SOCKS 隧道（必须是 socks5h，让远端解析域名）
+ssh -D 127.0.0.1:1080 -N <your-overseas-host>
+$env:CLAUSELENS_EGRESS = "socks5h://127.0.0.1:1080"
+```
+
+见 `.env.example`。走出口的页面单次约 2–9 秒（多一次往返），所以只在直连失败时触发，
+并且同域名的后续请求会记住这次失败、直接走出口，不再每次白等连接超时。
+
+## 已知局限
+
+- 部分海外站点（google.com、x.com 等）从当前网络不可达，会提示「连不上」——配了出口才能读；
+  脚本渲染且未收录的站点可能找不到条款，可直接粘贴条款网址。
+- 等级只与 ToS;DR 社区评级一致约一半，主要误差是 A/B 与 E 两端被压到 C/D；当作「参考信号」而非结论。
+- 中文模型训练集只有 2,000 句，低频标签（仲裁、集体诉讼、最终解释权）主要靠规则。

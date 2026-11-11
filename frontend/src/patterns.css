@@ -1,0 +1,67 @@
+/* 背景图案集 —— <html data-pattern="..."> 或 URL 参数 ?pattern=iris
+   可选：grid / iris / hex / meander / docs / stamp / scales / dots / none
+
+   设计原则：画的是**图形**不是肌理——有形象（光圈、蜂巢、回纹、文书、印章、天平），
+   线极细（0.7–0.9px）、单色、低对比，远看是纸上的暗纹，近看才认出画的是什么。 */
+
+:root {
+  /* ① 方格：最规矩的底，基准 */
+  --pat-grid: linear-gradient(to right, var(--pattern-line) 1px, transparent 1px),
+              linear-gradient(to bottom, var(--pattern-line) 1px, transparent 1px);
+  --pat-grid-size: 24px 24px, 24px 24px;
+
+  /* ② 光圈 iris：同心环 + 六片光圈叶，呼应「透镜」这个名字 */
+  --pat-iris: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='144' height='144' viewBox='0 0 144 144'%3E%3Cg fill='none' stroke='%23191816' stroke-width='.8' stroke-opacity='.55'%3E%3Ccircle cx='72' cy='72' r='54'/%3E%3Ccircle cx='72' cy='72' r='44' stroke-opacity='.28'/%3E%3Ccircle cx='72' cy='72' r='25'/%3E%3Cpath d='M72,47 V11'/%3E%3Cpath d='M94,59 L125,41'/%3E%3Cpath d='M94,85 L125,103'/%3E%3Cpath d='M72,97 V133'/%3E%3Cpath d='M50,85 L19,103'/%3E%3Cpath d='M50,59 L19,41'/%3E%3C/g%3E%3C/svg%3E");
+  --pat-iris-size: 144px 144px;
+
+  /* ③ 蜂巢 hex：错落的六边形，与雷达图同构 */
+  --pat-hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='84' viewBox='0 0 72 84'%3E%3Cg fill='none' stroke='%23191816' stroke-width='.7' stroke-opacity='.4'%3E%3Cpath d='M-12,20.8 L0,0 L24,0 L36,20.8 L24,41.6 L0,41.6 Z'/%3E%3Cpath d='M24,62.4 L36,41.6 L60,41.6 L72,62.4 L60,83.2 L36,83.2 Z'/%3E%3C/g%3E%3C/svg%3E");
+  --pat-hex-size: 72px 84px;
+
+  /* ④ 回纹 meander：方波折线，中式雷纹的简化，首尾能接上 */
+  --pat-meander: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='64' viewBox='0 0 96 64'%3E%3Cpath d='M0,52 H34 V14 H62 V52 H96' fill='none' stroke='%23191816' stroke-opacity='.2' stroke-width='.9'/%3E%3C/svg%3E");
+  --pat-meander-size: 32px 24px;
+
+  /* ⑤ 文书 docs：带折角的纸张剪影，大小两张错落 */
+  --pat-docs: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='168' height='168' viewBox='0 0 168 168'%3E%3Cg fill='none' stroke='%23191816' stroke-width='.8' stroke-opacity='.45'%3E%3Cpath d='M20,34 h44 v58 h-44 Z'/%3E%3Cpath d='M64,34 l14,14 h-14'/%3E%3Cpath d='M28,48 h28 M28,58 h28 M28,68 h20 M28,78 h24' stroke-opacity='.3'/%3E%3Cpath d='M96,86 h44 v58 h-44 Z'/%3E%3Cpath d='M140,86 l14,14 h-14'/%3E%3Cpath d='M104,100 h28 M104,110 h28 M104,120 h20' stroke-opacity='.3'/%3E%3C/g%3E%3C/svg%3E");
+  --pat-docs-size: 168px 168px;
+
+  /* ⑥ 印痕 stamp：大小不一的圆章轮廓（虚线圈 + 实线圆 + 小圆芯） */
+  --pat-stamp: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='176' height='176' viewBox='0 0 176 176'%3E%3Cg fill='none' stroke='%23191816' stroke-width='.8' stroke-opacity='.45'%3E%3Ccircle cx='48' cy='50' r='28'/%3E%3Ccircle cx='48' cy='50' r='20' stroke-dasharray='2 5'/%3E%3Ccircle cx='48' cy='50' r='6'/%3E%3Ccircle cx='126' cy='124' r='33'/%3E%3Ccircle cx='126' cy='124' r='24' stroke-dasharray='1 4'/%3E%3Ccircle cx='126' cy='124' r='9' stroke-opacity='.5'/%3E%3C/g%3E%3C/svg%3E");
+  --pat-stamp-size: 176px 176px;
+
+  /* ⑦ 天平 scales：立柱 + 横梁 + 两片秤盘，法律意象 */
+  --pat-scales: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='none' stroke='%23191816' stroke-width='.85' stroke-opacity='.6'%3E%3Cpath d='M90,44 v70'/%3E%3Cpath d='M66,114 h48'/%3E%3Cpath d='M42,58 h96'/%3E%3Cpath d='M42,58 l-11,19 h22 Z'/%3E%3Cpath d='M138,58 l-11,19 h22 Z'/%3E%3Ccircle cx='90' cy='40' r='4.5'/%3E%3Cpath d='M18,150 h44' stroke-opacity='.28'/%3E%3Cpath d='M118,150 h44' stroke-opacity='.28'/%3E%3C/g%3E%3C/svg%3E");
+  --pat-scales-size: 180px 180px;
+
+  /* ⑧ 网点 dots：最轻的肌理，兜底 */
+  --pat-dots: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Ccircle cx='3' cy='3' r='.8' fill='%23191816' fill-opacity='.45'/%3E%3Ccircle cx='9' cy='9' r='.8' fill='%23191816' fill-opacity='.45'/%3E%3C/svg%3E");
+  --pat-dots-size: 12px 12px;
+
+  /* 默认：光圈 */
+  --pat: var(--pat-grid);
+  --pat-size: var(--pat-grid-size);
+}
+
+[data-pattern="grid"]    { --pat: var(--pat-grid);    --pat-size: var(--pat-grid-size); --pat-opacity: 0.6; }
+[data-pattern="iris"]    { --pat: var(--pat-iris);    --pat-size: var(--pat-iris-size); }
+[data-pattern="hex"]     { --pat: var(--pat-hex);     --pat-size: var(--pat-hex-size); }
+[data-pattern="meander"] { --pat: var(--pat-meander); --pat-size: var(--pat-meander-size); }
+[data-pattern="docs"]    { --pat: var(--pat-docs);    --pat-size: var(--pat-docs-size); }
+[data-pattern="stamp"]   { --pat: var(--pat-stamp);   --pat-size: var(--pat-stamp-size); }
+[data-pattern="scales"]  { --pat: var(--pat-scales);  --pat-size: var(--pat-scales-size); }
+[data-pattern="dots"]    { --pat: var(--pat-dots);    --pat-size: var(--pat-dots-size); }
+[data-pattern="none"]    { --pat: none;               --pat-size: auto; }
+
+/* 深色：同样的图形换成浅墨线，否则墨底上完全看不见 */
+[data-theme="dark"] {
+  --pat-grid: linear-gradient(to right, var(--pattern-line) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--pattern-line) 1px, transparent 1px);
+  --pat-iris: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='144' height='144' viewBox='0 0 144 144'%3E%3Cg fill='none' stroke='%23ece7dc' stroke-width='.8' stroke-opacity='.5'%3E%3Ccircle cx='72' cy='72' r='54'/%3E%3Ccircle cx='72' cy='72' r='44' stroke-opacity='.26'/%3E%3Ccircle cx='72' cy='72' r='25'/%3E%3Cpath d='M72,47 V11'/%3E%3Cpath d='M94,59 L125,41'/%3E%3Cpath d='M94,85 L125,103'/%3E%3Cpath d='M72,97 V133'/%3E%3Cpath d='M50,85 L19,103'/%3E%3Cpath d='M50,59 L19,41'/%3E%3C/g%3E%3C/svg%3E");
+  --pat-hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='92' viewBox='0 0 104 92'%3E%3Cg fill='none' stroke='%23ece7dc' stroke-width='.75' stroke-opacity='.45'%3E%3Cpath d='M26,9 L45,20 L45,42 L26,53 L7,42 L7,20 Z'/%3E%3Cpath d='M78,39 L97,50 L97,72 L78,83 L59,72 L59,50 Z'/%3E%3C/g%3E%3C/svg%3E");
+  --pat-meander: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='24' viewBox='0 0 32 24'%3E%3Cpath d='M0,18 H8 V6 H16 V18 H24 V6 H32' fill='none' stroke='%23ece7dc' stroke-opacity='.4' stroke-width='.9'/%3E%3C/svg%3E");
+  --pat-docs: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='168' height='168' viewBox='0 0 168 168'%3E%3Cg fill='none' stroke='%23ece7dc' stroke-width='.8' stroke-opacity='.4'%3E%3Cpath d='M20,34 h44 v58 h-44 Z'/%3E%3Cpath d='M64,34 l14,14 h-14'/%3E%3Cpath d='M28,48 h28 M28,58 h28 M28,68 h20 M28,78 h24' stroke-opacity='.26'/%3E%3Cpath d='M96,86 h44 v58 h-44 Z'/%3E%3Cpath d='M140,86 l14,14 h-14'/%3E%3Cpath d='M104,100 h28 M104,110 h28 M104,120 h20' stroke-opacity='.26'/%3E%3C/g%3E%3C/svg%3E");
+  --pat-stamp: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='176' height='176' viewBox='0 0 176 176'%3E%3Cg fill='none' stroke='%23ece7dc' stroke-width='.8' stroke-opacity='.4'%3E%3Ccircle cx='48' cy='50' r='28'/%3E%3Ccircle cx='48' cy='50' r='20' stroke-dasharray='2 5'/%3E%3Ccircle cx='48' cy='50' r='6'/%3E%3Ccircle cx='126' cy='124' r='33'/%3E%3Ccircle cx='126' cy='124' r='24' stroke-dasharray='1 4'/%3E%3Ccircle cx='126' cy='124' r='9' stroke-opacity='.45'/%3E%3C/g%3E%3C/svg%3E");
+  --pat-scales: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='none' stroke='%23ece7dc' stroke-width='.8' stroke-opacity='.4'%3E%3Cpath d='M90,44 v70'/%3E%3Cpath d='M66,114 h48'/%3E%3Cpath d='M42,58 h96'/%3E%3Cpath d='M42,58 l-11,19 h22 Z'/%3E%3Cpath d='M138,58 l-11,19 h22 Z'/%3E%3Ccircle cx='90' cy='40' r='4.5'/%3E%3Cpath d='M18,150 h44' stroke-opacity='.24'/%3E%3Cpath d='M118,150 h44' stroke-opacity='.24'/%3E%3C/g%3E%3C/svg%3E");
+  --pat-dots: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Ccircle cx='3' cy='3' r='.8' fill='%23ece7dc' fill-opacity='.45'/%3E%3Ccircle cx='9' cy='9' r='.8' fill='%23ece7dc' fill-opacity='.45'/%3E%3C/svg%3E");
+}

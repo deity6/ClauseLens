@@ -1,0 +1,251 @@
+{
+ "capp130": {
+  "split": "dev",
+  "n_apps": 57,
+  "n_sentences": 19327,
+  "topics": {
+   "共享、委托、转让、公开（披露）": {
+    "precision": 0.585,
+    "recall": 0.133,
+    "f1": 0.217,
+    "support": 2276
+   },
+   "特殊人群": {
+    "precision": 0.614,
+    "recall": 0.599,
+    "f1": 0.606,
+    "support": 716
+   },
+   "联系方式": {
+    "precision": 0.274,
+    "recall": 0.157,
+    "f1": 0.199,
+    "support": 370
+   },
+   "数据、权限管理": {
+    "precision": 0.728,
+    "recall": 0.156,
+    "f1": 0.257,
+    "support": 2554
+   },
+   "存储方式": {
+    "precision": 0.779,
+    "recall": 0.102,
+    "f1": 0.18,
+    "support": 657
+   },
+   "隐私政策的授权、修改与变更": {
+    "precision": 0.972,
+    "recall": 0.137,
+    "f1": 0.24,
+    "support": 503
+   },
+   "权限获取": {
+    "precision": 0.218,
+    "recall": 0.233,
+    "f1": 0.225,
+    "support": 940
+   }
+  }
+ },
+ "zh_gold": {
+  "split": "dev",
+  "n": 400,
+  "micro": {
+   "precision": 0.772,
+   "recall": 0.772,
+   "f1": 0.772
+  },
+  "per_label": {
+   "account-termination-anytime": {
+    "precision": 0.429,
+    "recall": 0.75,
+    "f1": 0.545,
+    "support": 4,
+    "fp": 4
+   },
+   "ai-training": {
+    "precision": 0.0,
+    "recall": 0,
+    "f1": 0,
+    "support": 0,
+    "fp": 2
+   },
+   "broad-content-license": {
+    "precision": 0.0,
+    "recall": 0,
+    "f1": 0,
+    "support": 0,
+    "fp": 1
+   },
+   "broad-liability-waiver": {
+    "precision": 0.909,
+    "recall": 0.909,
+    "f1": 0.909,
+    "support": 22,
+    "fp": 2
+   },
+   "can-delete-data": {
+    "precision": 0.8,
+    "recall": 0.8,
+    "f1": 0.8,
+    "support": 5,
+    "fp": 1
+   },
+   "can-export-data": {
+    "precision": 0.333,
+    "recall": 0.333,
+    "f1": 0.333,
+    "support": 3,
+    "fp": 2
+   },
+   "collects-beyond-service": {
+    "precision": 0.0,
+    "recall": 0,
+    "f1": 0,
+    "support": 0,
+    "fp": 1
+   },
+   "collects-contacts-device": {
+    "precision": 0.643,
+    "recall": 0.6,
+    "f1": 0.621,
+    "support": 15,
+    "fp": 5
+   },
+   "collects-sensitive": {
+    "precision": 0.857,
+    "recall": 0.667,
+    "f1": 0.75,
+    "support": 9,
+    "fp": 1
+   },
+   "contact-dpo": {
+    "precision": 0.917,
+    "recall": 1.0,
+    "f1": 0.957,
+    "support": 11,
+    "fp": 1
+   },
+   "content-removal-discretion": {
+    "precision": 1.0,
+    "recall": 0.4,
+    "f1": 0.571,
+    "support": 5,
+    "fp": 0
+   },
+   "cross-border-transfer": {
+    "precision": 0.5,
+    "recall": 1.0,
+    "f1": 0.667,
+    "support": 1,
+    "fp": 1
+   },
+   "data-minimization": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 1,
+    "fp": 0
+   },
+   "data-sold-or-shared": {
+    "precision": 0.9,
+    "recall": 1.0,
+    "f1": 0.947,
+    "support": 9,
+    "fp": 1
+   },
+   "default-consent": {
+    "precision": 1.0,
+    "recall": 0.714,
+    "f1": 0.833,
+    "support": 7,
+    "fp": 0
+   },
+   "easy-account-deletion": {
+    "precision": 1.0,
+    "recall": 0.667,
+    "f1": 0.8,
+    "support": 3,
+    "fp": 0
+   },
+   "far-jurisdiction": {
+    "precision": 0.5,
+    "recall": 1.0,
+    "f1": 0.667,
+    "support": 1,
+    "fp": 1
+   },
+   "gov-disclosure": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 1,
+    "fp": 0
+   },
+   "hard-account-deletion": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 1,
+    "fp": 0
+   },
+   "indefinite-retention": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 1,
+    "fp": 0
+   },
+   "liability-cap": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 1,
+    "fp": 0
+   },
+   "minors-protection": {
+    "precision": 0.615,
+    "recall": 0.727,
+    "f1": 0.667,
+    "support": 11,
+    "fp": 5
+   },
+   "no-tracking": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 1,
+    "fp": 0
+   },
+   "personalized-ads": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 4,
+    "fp": 0
+   },
+   "terms-change-no-notice": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 4,
+    "fp": 0
+   },
+   "user-indemnifies": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 2,
+    "fp": 0
+   },
+   "you-own-content": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 1,
+    "fp": 0
+   }
+  }
+ }
+}

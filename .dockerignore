@@ -1,0 +1,18 @@
+# 构建上下文里不需要的东西
+node_modules/
+frontend/node_modules/
+frontend/src/
+data/raw/
+data/cache/
+data/processed/*.jsonl
+data/feedback.jsonl*
+.cc-import/
+docs/design/screens/
+eval/
+scripts/
+.git/
+__pycache__/
+*.pyc
+npm-install.log
+*.log
+.env

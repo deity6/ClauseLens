@@ -1,0 +1,24 @@
+data/raw/
+data/feedback.jsonl
+data/feedback.jsonl.1
+data/cache/
+node_modules/
+frontend/dist/
+__pycache__/
+*.pyc
+.venv/
+npm-install.log
+*.log
+.env
+
+# 数据集与模型合计约 365 MB，都能用 scripts/ 重建；仓库里只留评测划分、语料说明和标注指南
+data/processed/*
+!data/processed/split.json
+!data/processed/CORPUS.md
+!data/processed/zh_label_guide.json
+data/models/
+
+# 会话导入包与本地工作目录：里面有 CC 的对话记录、一次性测试脚本，不属于项目源码
+.cc-import/
+# Claude Code / 编辑器本地配置
+.claude/

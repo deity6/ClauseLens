@@ -1,0 +1,3129 @@
+{
+ "n_test_sites": 443,
+ "exact": 0.503,
+ "within_1": 0.944,
+ "spearman_score_vs_grade": 0.499,
+ "baseline_majority_exact": 0.427,
+ "confusion": {
+  "A->B": 3,
+  "A->C": 7,
+  "B->A": 2,
+  "B->B": 5,
+  "B->C": 17,
+  "B->D": 8,
+  "C->A": 2,
+  "C->B": 11,
+  "C->C": 103,
+  "C->D": 73,
+  "D->B": 2,
+  "D->C": 49,
+  "D->D": 112,
+  "D->E": 3,
+  "E->C": 6,
+  "E->D": 37,
+  "E->E": 3
+ },
+ "sites": [
+  {
+   "domain": "airbnb.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 41,
+   "n_tags": 29
+  },
+  {
+   "domain": "pinterest.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 32
+  },
+  {
+   "domain": "fightforthefuture.org",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 15
+  },
+  {
+   "domain": "att.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 24
+  },
+  {
+   "domain": "netflix.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 19
+  },
+  {
+   "domain": "reputation.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 27
+  },
+  {
+   "domain": "wetransfer.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 28
+  },
+  {
+   "domain": "ebay.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 46,
+   "n_tags": 34
+  },
+  {
+   "domain": "toryburch.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 25
+  },
+  {
+   "domain": "kolabnow.com",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 67,
+   "n_tags": 9
+  },
+  {
+   "domain": "librarything.com",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 64,
+   "n_tags": 21
+  },
+  {
+   "domain": "spideroak.com",
+   "tosdr": "B",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 26
+  },
+  {
+   "domain": "websaver.ca",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 20
+  },
+  {
+   "domain": "newsblur.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 22
+  },
+  {
+   "domain": "tumblr.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 42,
+   "n_tags": 29
+  },
+  {
+   "domain": "justpark.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 27
+  },
+  {
+   "domain": "scotiabank.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 19
+  },
+  {
+   "domain": "groupon.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 18
+  },
+  {
+   "domain": "icloud.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 28
+  },
+  {
+   "domain": "wordfeud.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 25
+  },
+  {
+   "domain": "ello.co",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 28
+  },
+  {
+   "domain": "experteer.com",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 63,
+   "n_tags": 18
+  },
+  {
+   "domain": "stackexchange.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 42,
+   "n_tags": 28
+  },
+  {
+   "domain": "cnet.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 40,
+   "n_tags": 31
+  },
+  {
+   "domain": "dictionary.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 43,
+   "n_tags": 31
+  },
+  {
+   "domain": "urbandictionary.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 45,
+   "n_tags": 23
+  },
+  {
+   "domain": "blogspot.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 29
+  },
+  {
+   "domain": "riseup.net",
+   "tosdr": "B",
+   "ours": "B",
+   "score": 77,
+   "n_tags": 17
+  },
+  {
+   "domain": "bing.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 34
+  },
+  {
+   "domain": "app.net",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 29
+  },
+  {
+   "domain": "olx.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 44,
+   "n_tags": 30
+  },
+  {
+   "domain": "hulu.com",
+   "tosdr": "E",
+   "ours": "E",
+   "score": 5,
+   "n_tags": 26
+  },
+  {
+   "domain": "mi.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 57,
+   "n_tags": 26
+  },
+  {
+   "domain": "tidyhq.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 27
+  },
+  {
+   "domain": "verizon.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 16
+  },
+  {
+   "domain": "deprecated8",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 27
+  },
+  {
+   "domain": "drf.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 19
+  },
+  {
+   "domain": "mondosol.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 28
+  },
+  {
+   "domain": "heavenhr.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 60,
+   "n_tags": 3
+  },
+  {
+   "domain": "walmart.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 15
+  },
+  {
+   "domain": "yelp.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 42,
+   "n_tags": 31
+  },
+  {
+   "domain": "furrymate.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 43,
+   "n_tags": 27
+  },
+  {
+   "domain": "tinkercad.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 18
+  },
+  {
+   "domain": "burningman.org",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 14
+  },
+  {
+   "domain": "letsencrypt.org",
+   "tosdr": "C",
+   "ours": "B",
+   "score": 74,
+   "n_tags": 12
+  },
+  {
+   "domain": "xfinity.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 45,
+   "n_tags": 30
+  },
+  {
+   "domain": "protonmail.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 20
+  },
+  {
+   "domain": "warnerbros.com",
+   "tosdr": "E",
+   "ours": "E",
+   "score": 25,
+   "n_tags": 27
+  },
+  {
+   "domain": "goodtodo.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 60,
+   "n_tags": 21
+  },
+  {
+   "domain": "qwant.com",
+   "tosdr": "B",
+   "ours": "B",
+   "score": 74,
+   "n_tags": 13
+  },
+  {
+   "domain": "discord.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 28
+  },
+  {
+   "domain": "atlassian.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 31
+  },
+  {
+   "domain": "slither.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 3
+  },
+  {
+   "domain": "cik.cool",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 67,
+   "n_tags": 1
+  },
+  {
+   "domain": "lacentrale.fr",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 10
+  },
+  {
+   "domain": "windowslogic.co.uk",
+   "tosdr": "C",
+   "ours": "B",
+   "score": 72,
+   "n_tags": 15
+  },
+  {
+   "domain": "discogs.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 14
+  },
+  {
+   "domain": "setlisting.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 17
+  },
+  {
+   "domain": "amnesty.org",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 61,
+   "n_tags": 15
+  },
+  {
+   "domain": "edx.org",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 25
+  },
+  {
+   "domain": "osmand.net",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 14
+  },
+  {
+   "domain": "news.ycombinator.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 30
+  },
+  {
+   "domain": "tweakers.net",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 60,
+   "n_tags": 3
+  },
+  {
+   "domain": "fastmail.com",
+   "tosdr": "B",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 29
+  },
+  {
+   "domain": "ankiweb.net",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 57,
+   "n_tags": 20
+  },
+  {
+   "domain": "nvidia.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 18
+  },
+  {
+   "domain": "https://userstyles.org",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 19
+  },
+  {
+   "domain": "npmjs.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 29
+  },
+  {
+   "domain": "pixiv.net",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 17
+  },
+  {
+   "domain": "speakermatch.com",
+   "tosdr": "E",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 19
+  },
+  {
+   "domain": "wanikani.com",
+   "tosdr": "B",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 28
+  },
+  {
+   "domain": "avaaz.org",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 25
+  },
+  {
+   "domain": "interfolio.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 44,
+   "n_tags": 26
+  },
+  {
+   "domain": "gov.uk",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 20
+  },
+  {
+   "domain": "zoho.com",
+   "tosdr": "B",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 30
+  },
+  {
+   "domain": "skribbl.io",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 11
+  },
+  {
+   "domain": "baidu.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 21
+  },
+  {
+   "domain": "rottentomatoes.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 8
+  },
+  {
+   "domain": "whirlpool.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 41,
+   "n_tags": 27
+  },
+  {
+   "domain": "whatismyip.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 21
+  },
+  {
+   "domain": "newegg.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 19
+  },
+  {
+   "domain": "mysudo.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 24
+  },
+  {
+   "domain": "kitsu.io",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 45,
+   "n_tags": 18
+  },
+  {
+   "domain": "tiktok.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 46,
+   "n_tags": 22
+  },
+  {
+   "domain": "tvtropes.org",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 10
+  },
+  {
+   "domain": "wanttoknow.nl",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 64,
+   "n_tags": 1
+  },
+  {
+   "domain": "fossgis.de",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 6
+  },
+  {
+   "domain": "scistarter.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 21
+  },
+  {
+   "domain": "mailbox.org",
+   "tosdr": "C",
+   "ours": "B",
+   "score": 72,
+   "n_tags": 15
+  },
+  {
+   "domain": "garmin.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 25
+  },
+  {
+   "domain": "harpermacaw.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 10
+  },
+  {
+   "domain": "shapeshift.io",
+   "tosdr": "E",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 27
+  },
+  {
+   "domain": "roboform.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 21
+  },
+  {
+   "domain": "isodme.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 30
+  },
+  {
+   "domain": "https://offtopical.net/",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 67,
+   "n_tags": 1
+  },
+  {
+   "domain": "rainforest-alliance.org",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 17
+  },
+  {
+   "domain": "sourcehut.org",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 61,
+   "n_tags": 18
+  },
+  {
+   "domain": "hqtrivia.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 44,
+   "n_tags": 31
+  },
+  {
+   "domain": "amightygirl.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 60,
+   "n_tags": 9
+  },
+  {
+   "domain": "archive.org",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 10
+  },
+  {
+   "domain": "clyp.it",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 14
+  },
+  {
+   "domain": "ruhrtalradweg.de",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 3
+  },
+  {
+   "domain": "crowdin.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 29
+  },
+  {
+   "domain": "kukiruki.ru",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 0
+  },
+  {
+   "domain": "wizards.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 46,
+   "n_tags": 34
+  },
+  {
+   "domain": "miicharacters.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 60,
+   "n_tags": 7
+  },
+  {
+   "domain": "penguinrandomhouse.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 45,
+   "n_tags": 30
+  },
+  {
+   "domain": "420a3.com",
+   "tosdr": "A",
+   "ours": "C",
+   "score": 55,
+   "n_tags": 26
+  },
+  {
+   "domain": "devsoap.com",
+   "tosdr": "C",
+   "ours": "B",
+   "score": 84,
+   "n_tags": 11
+  },
+  {
+   "domain": "themoviedb.org",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 46,
+   "n_tags": 28
+  },
+  {
+   "domain": "dairyqueen.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 25
+  },
+  {
+   "domain": "nationalgeographic.org",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 28
+  },
+  {
+   "domain": "vox.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 45,
+   "n_tags": 32
+  },
+  {
+   "domain": "webmd.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 45,
+   "n_tags": 26
+  },
+  {
+   "domain": "wired.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 46,
+   "n_tags": 32
+  },
+  {
+   "domain": "lastminute.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 8
+  },
+  {
+   "domain": "snopes.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 29
+  },
+  {
+   "domain": "blogtrottr.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 13
+  },
+  {
+   "domain": "renweb.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 13
+  },
+  {
+   "domain": "virustotal.com",
+   "tosdr": "B",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 23
+  },
+  {
+   "domain": "metacafe.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 21
+  },
+  {
+   "domain": "salesmate.io",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 57,
+   "n_tags": 24
+  },
+  {
+   "domain": "sanctionedsuicide.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 6
+  },
+  {
+   "domain": "chegg.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 27
+  },
+  {
+   "domain": "youtubekids.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 6
+  },
+  {
+   "domain": "nextdns.io",
+   "tosdr": "A",
+   "ours": "C",
+   "score": 70,
+   "n_tags": 2
+  },
+  {
+   "domain": "trycocoon.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 30
+  },
+  {
+   "domain": "whereby.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 61,
+   "n_tags": 21
+  },
+  {
+   "domain": "yubico.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 13
+  },
+  {
+   "domain": "surfshark.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 57,
+   "n_tags": 28
+  },
+  {
+   "domain": "chase.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 16
+  },
+  {
+   "domain": "standardnotes.com",
+   "tosdr": "A",
+   "ours": "B",
+   "score": 80,
+   "n_tags": 5
+  },
+  {
+   "domain": "actblue.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 55,
+   "n_tags": 10
+  },
+  {
+   "domain": "uncrownedempire.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 25
+  },
+  {
+   "domain": "wolt.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 60,
+   "n_tags": 16
+  },
+  {
+   "domain": "houseparty.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 45,
+   "n_tags": 30
+  },
+  {
+   "domain": "jitsi.org",
+   "tosdr": "B",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 17
+  },
+  {
+   "domain": "turnitin.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 32
+  },
+  {
+   "domain": "adventurerscodex.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 57,
+   "n_tags": 25
+  },
+  {
+   "domain": "anonfiles.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 5
+  },
+  {
+   "domain": "pillowfort.social",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 55,
+   "n_tags": 29
+  },
+  {
+   "domain": "runalyze.com",
+   "tosdr": "B",
+   "ours": "B",
+   "score": 72,
+   "n_tags": 13
+  },
+  {
+   "domain": "bol-d-air.net",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 67,
+   "n_tags": 3
+  },
+  {
+   "domain": "smartmessages.net",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 22
+  },
+  {
+   "domain": "musescore.org",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 27
+  },
+  {
+   "domain": "freshworks.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 4
+  },
+  {
+   "domain": "bygabyardigo.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 24
+  },
+  {
+   "domain": "esia.gosuslugi.ru",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 0
+  },
+  {
+   "domain": "listudy.org",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 16
+  },
+  {
+   "domain": "nikitin.photo",
+   "tosdr": "C",
+   "ours": "A",
+   "score": 100,
+   "n_tags": 5
+  },
+  {
+   "domain": "hackingwithswift.com",
+   "tosdr": "B",
+   "ours": "B",
+   "score": 83,
+   "n_tags": 7
+  },
+  {
+   "domain": "codewars.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 57,
+   "n_tags": 25
+  },
+  {
+   "domain": "ytmp3.cc",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 44,
+   "n_tags": 20
+  },
+  {
+   "domain": "weather.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 30
+  },
+  {
+   "domain": "themarkup.org",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 25
+  },
+  {
+   "domain": "doxy.me",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 66,
+   "n_tags": 19
+  },
+  {
+   "domain": "criptext.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 27
+  },
+  {
+   "domain": "rightsstatements.org",
+   "tosdr": "B",
+   "ours": "A",
+   "score": 94,
+   "n_tags": 7
+  },
+  {
+   "domain": "hugeminis.com",
+   "tosdr": "C",
+   "ours": "B",
+   "score": 80,
+   "n_tags": 5
+  },
+  {
+   "domain": "zendesk.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 46,
+   "n_tags": 30
+  },
+  {
+   "domain": "securisend.com",
+   "tosdr": "A",
+   "ours": "C",
+   "score": 68,
+   "n_tags": 8
+  },
+  {
+   "domain": "layersoflondon.org",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 16
+  },
+  {
+   "domain": "auttaja.io",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 64,
+   "n_tags": 12
+  },
+  {
+   "domain": "immunet.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 57,
+   "n_tags": 26
+  },
+  {
+   "domain": "pcloud.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 28
+  },
+  {
+   "domain": "mojeek.com",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 16
+  },
+  {
+   "domain": "legalzoom.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 31
+  },
+  {
+   "domain": "doordash.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 42,
+   "n_tags": 32
+  },
+  {
+   "domain": "august.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 31
+  },
+  {
+   "domain": "instabridge.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 25
+  },
+  {
+   "domain": "flerogames.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 30
+  },
+  {
+   "domain": "instacart.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 43,
+   "n_tags": 31
+  },
+  {
+   "domain": "iziram.fr",
+   "tosdr": "A",
+   "ours": "B",
+   "score": 71,
+   "n_tags": 3
+  },
+  {
+   "domain": "marca.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 64,
+   "n_tags": 2
+  },
+  {
+   "domain": "elmundo.es",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 64,
+   "n_tags": 2
+  },
+  {
+   "domain": "lemonde.fr",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 10
+  },
+  {
+   "domain": "simplelogin.io",
+   "tosdr": "B",
+   "ours": "A",
+   "score": 100,
+   "n_tags": 14
+  },
+  {
+   "domain": "calyxos.org",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 18
+  },
+  {
+   "domain": "cisco.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 29
+  },
+  {
+   "domain": "opencollective.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 42,
+   "n_tags": 24
+  },
+  {
+   "domain": "danbooru.donmai.us",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 55,
+   "n_tags": 24
+  },
+  {
+   "domain": "guilded.gg",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 31
+  },
+  {
+   "domain": "thisnew.com",
+   "tosdr": "E",
+   "ours": "E",
+   "score": 16,
+   "n_tags": 29
+  },
+  {
+   "domain": "s-config.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 69,
+   "n_tags": 7
+  },
+  {
+   "domain": "travis-ci.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 21
+  },
+  {
+   "domain": "airvpn.org",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 68,
+   "n_tags": 12
+  },
+  {
+   "domain": "eksisozluk.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 1
+  },
+  {
+   "domain": "powercord.dev",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 17
+  },
+  {
+   "domain": "mapillary.github.io",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 29
+  },
+  {
+   "domain": "adt.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 29
+  },
+  {
+   "domain": "slickvpn.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 20
+  },
+  {
+   "domain": "ipvanish.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 55,
+   "n_tags": 26
+  },
+  {
+   "domain": "csdn.net",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 10
+  },
+  {
+   "domain": "safervpn.com",
+   "tosdr": "D",
+   "ours": "E",
+   "score": 34,
+   "n_tags": 21
+  },
+  {
+   "domain": "metamask.io",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 30
+  },
+  {
+   "domain": "ra4wvpn.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 10
+  },
+  {
+   "domain": "adguard.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 21
+  },
+  {
+   "domain": "webflow.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 44,
+   "n_tags": 33
+  },
+  {
+   "domain": "fastestvpn.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 13
+  },
+  {
+   "domain": "veepn.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 27
+  },
+  {
+   "domain": "lightyearvpn.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 29
+  },
+  {
+   "domain": "admin.ch",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 14
+  },
+  {
+   "domain": "orange.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 16
+  },
+  {
+   "domain": "profilic.co",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 22
+  },
+  {
+   "domain": "drugbank.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 60,
+   "n_tags": 19
+  },
+  {
+   "domain": "yewtu.be",
+   "tosdr": "A",
+   "ours": "B",
+   "score": 75,
+   "n_tags": 3
+  },
+  {
+   "domain": "donorbox.org",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 18
+  },
+  {
+   "domain": "albertsons.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 43,
+   "n_tags": 33
+  },
+  {
+   "domain": "usatoday.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 30
+  },
+  {
+   "domain": "rovio.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 41,
+   "n_tags": 29
+  },
+  {
+   "domain": "talkingtomandfriends.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 10
+  },
+  {
+   "domain": "oxfam.org",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 20
+  },
+  {
+   "domain": "delivery.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 40,
+   "n_tags": 21
+  },
+  {
+   "domain": "bulletvpn.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 14
+  },
+  {
+   "domain": "vpnhub.com",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 55,
+   "n_tags": 28
+  },
+  {
+   "domain": "play-asia.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 20
+  },
+  {
+   "domain": "thomasliquet.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 15
+  },
+  {
+   "domain": "mattermost.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 31
+  },
+  {
+   "domain": "lofter.com",
+   "tosdr": "E",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 19
+  },
+  {
+   "domain": "aminoapps.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 29
+  },
+  {
+   "domain": "thechurchfactory.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 66,
+   "n_tags": 8
+  },
+  {
+   "domain": "nook.market",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 57,
+   "n_tags": 15
+  },
+  {
+   "domain": "picclick.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 55,
+   "n_tags": 18
+  },
+  {
+   "domain": "bandlab.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 28
+  },
+  {
+   "domain": "apnews.com",
+   "tosdr": "D",
+   "ours": "E",
+   "score": 5,
+   "n_tags": 26
+  },
+  {
+   "domain": "how2shout.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 16
+  },
+  {
+   "domain": "spankbang.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 46,
+   "n_tags": 21
+  },
+  {
+   "domain": "icedrive.net",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 16
+  },
+  {
+   "domain": "budgetbakers.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 24
+  },
+  {
+   "domain": "wm.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 41,
+   "n_tags": 29
+  },
+  {
+   "domain": "savetzpublishing.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 3
+  },
+  {
+   "domain": "evaluationkit.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 26
+  },
+  {
+   "domain": "later.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 46,
+   "n_tags": 28
+  },
+  {
+   "domain": "taskulu.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 64,
+   "n_tags": 19
+  },
+  {
+   "domain": "parler.com",
+   "tosdr": "B",
+   "ours": "D",
+   "score": 45,
+   "n_tags": 21
+  },
+  {
+   "domain": "streamlabs.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 31
+  },
+  {
+   "domain": "blue-archive.org",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 11
+  },
+  {
+   "domain": "hetzner.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 24
+  },
+  {
+   "domain": "techwiser.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 5
+  },
+  {
+   "domain": "usl.website",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 60,
+   "n_tags": 20
+  },
+  {
+   "domain": "youporn.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 44,
+   "n_tags": 30
+  },
+  {
+   "domain": "scjbrands.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 46,
+   "n_tags": 30
+  },
+  {
+   "domain": "tasks.org",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 61,
+   "n_tags": 6
+  },
+  {
+   "domain": "gamingonlinux.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 68,
+   "n_tags": 8
+  },
+  {
+   "domain": "philasd.org",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 25
+  },
+  {
+   "domain": "swissinfo.ch",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 16
+  },
+  {
+   "domain": "omegle.com",
+   "tosdr": "E",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 13
+  },
+  {
+   "domain": "clicknupload.co",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 64,
+   "n_tags": 5
+  },
+  {
+   "domain": "spacedock.info",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 63,
+   "n_tags": 4
+  },
+  {
+   "domain": "sparkmailapp.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 61,
+   "n_tags": 27
+  },
+  {
+   "domain": "mercadolibre.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 63,
+   "n_tags": 2
+  },
+  {
+   "domain": "skroutz.gr",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 4
+  },
+  {
+   "domain": "edri.org",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 68,
+   "n_tags": 8
+  },
+  {
+   "domain": "glympse.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 46,
+   "n_tags": 32
+  },
+  {
+   "domain": "kde.org",
+   "tosdr": "C",
+   "ours": "B",
+   "score": 74,
+   "n_tags": 5
+  },
+  {
+   "domain": "addtoany.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 13
+  },
+  {
+   "domain": "secret.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 29
+  },
+  {
+   "domain": "curiositystream.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 30
+  },
+  {
+   "domain": "sciencenews.org",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 27
+  },
+  {
+   "domain": "libera.chat",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 69,
+   "n_tags": 8
+  },
+  {
+   "domain": "fly.io",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 26
+  },
+  {
+   "domain": "virginia.edu",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 7
+  },
+  {
+   "domain": "vault.ooo",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 57,
+   "n_tags": 10
+  },
+  {
+   "domain": "escrow.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 17
+  },
+  {
+   "domain": "scroll.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 14
+  },
+  {
+   "domain": "waterfox.net",
+   "tosdr": "A",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 8
+  },
+  {
+   "domain": "powtoon.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 55,
+   "n_tags": 26
+  },
+  {
+   "domain": "nationstates.net",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 66,
+   "n_tags": 19
+  },
+  {
+   "domain": "starbase118.net",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 6
+  },
+  {
+   "domain": "37signals.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 67,
+   "n_tags": 22
+  },
+  {
+   "domain": "brycewray.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 1
+  },
+  {
+   "domain": "code.org",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 30
+  },
+  {
+   "domain": "overwolf.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 26
+  },
+  {
+   "domain": "raindrop.io",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 60,
+   "n_tags": 25
+  },
+  {
+   "domain": "cycl.ch",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 8
+  },
+  {
+   "domain": "windy.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 27
+  },
+  {
+   "domain": "justeattakeaway.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 25
+  },
+  {
+   "domain": "explorelearning.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 22
+  },
+  {
+   "domain": "grameenphone.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 18
+  },
+  {
+   "domain": "guestreservations.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 28
+  },
+  {
+   "domain": "itv.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 23
+  },
+  {
+   "domain": "thesocialdilemma.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 10
+  },
+  {
+   "domain": "bleepingcomputer.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 57,
+   "n_tags": 25
+  },
+  {
+   "domain": "sohl.party",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 1
+  },
+  {
+   "domain": "intel.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 18
+  },
+  {
+   "domain": "digicert.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 23
+  },
+  {
+   "domain": "relay.firefox.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 11
+  },
+  {
+   "domain": "vpn.mozilla.org",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 11
+  },
+  {
+   "domain": "kali.org",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 9
+  },
+  {
+   "domain": "markiemm.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 20
+  },
+  {
+   "domain": "tesla.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 26
+  },
+  {
+   "domain": "uky.edu",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 61,
+   "n_tags": 8
+  },
+  {
+   "domain": "cryptomator.org",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 67,
+   "n_tags": 10
+  },
+  {
+   "domain": "buymeacoffee.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 20
+  },
+  {
+   "domain": "linguee.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 67,
+   "n_tags": 13
+  },
+  {
+   "domain": "qodeinteractive.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 61,
+   "n_tags": 15
+  },
+  {
+   "domain": "sleepcycle.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 18
+  },
+  {
+   "domain": "pili.com.tw",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 61,
+   "n_tags": 2
+  },
+  {
+   "domain": "unibocconi.eu",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 11
+  },
+  {
+   "domain": "nos.nl",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 2
+  },
+  {
+   "domain": "as.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 6
+  },
+  {
+   "domain": "helpcrunch.com",
+   "tosdr": "C",
+   "ours": "B",
+   "score": 78,
+   "n_tags": 18
+  },
+  {
+   "domain": "morningbrew.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 30
+  },
+  {
+   "domain": "iobit.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 26
+  },
+  {
+   "domain": "leawo.org",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 9
+  },
+  {
+   "domain": "nvidia.com#tosdr4711",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 18
+  },
+  {
+   "domain": "moviefinderhub.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 21
+  },
+  {
+   "domain": "gitbook.io",
+   "tosdr": "B",
+   "ours": "B",
+   "score": 76,
+   "n_tags": 18
+  },
+  {
+   "domain": "hardwickpendergast.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 69,
+   "n_tags": 4
+  },
+  {
+   "domain": "mathflare.tk",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 63,
+   "n_tags": 11
+  },
+  {
+   "domain": "motherboardspares.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 68,
+   "n_tags": 10
+  },
+  {
+   "domain": "hersheys.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 29
+  },
+  {
+   "domain": "teamsds.net",
+   "tosdr": "B",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 30
+  },
+  {
+   "domain": "universalminecraftconverter.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 26
+  },
+  {
+   "domain": "yello.co",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 20
+  },
+  {
+   "domain": "citiprogram.org",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 26
+  },
+  {
+   "domain": "pointsprizes.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 55,
+   "n_tags": 14
+  },
+  {
+   "domain": "carroll.edu",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 11
+  },
+  {
+   "domain": "spikenow.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 25
+  },
+  {
+   "domain": "wifimap.io",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 44,
+   "n_tags": 28
+  },
+  {
+   "domain": "pianomarvel.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 49,
+   "n_tags": 26
+  },
+  {
+   "domain": "canvas.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 25
+  },
+  {
+   "domain": "form-timer.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 10
+  },
+  {
+   "domain": "modrinth.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 19
+  },
+  {
+   "domain": "prulu.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 27
+  },
+  {
+   "domain": "maxkoehler.com",
+   "tosdr": "A",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 2
+  },
+  {
+   "domain": "truthsocial.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 44,
+   "n_tags": 29
+  },
+  {
+   "domain": "activitytrackerapp.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 61,
+   "n_tags": 18
+  },
+  {
+   "domain": "start.me",
+   "tosdr": "D",
+   "ours": "B",
+   "score": 74,
+   "n_tags": 8
+  },
+  {
+   "domain": "paulschroer.nl",
+   "tosdr": "C",
+   "ours": "B",
+   "score": 71,
+   "n_tags": 4
+  },
+  {
+   "domain": "ente.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 63,
+   "n_tags": 26
+  },
+  {
+   "domain": "atlanticrecords.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 45,
+   "n_tags": 26
+  },
+  {
+   "domain": "oceanhero.today",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 61,
+   "n_tags": 21
+  },
+  {
+   "domain": "homewindowprices.org",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 23
+  },
+  {
+   "domain": "splashlearn.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 32
+  },
+  {
+   "domain": "tanga.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 26
+  },
+  {
+   "domain": "mouse-sensitivity.com",
+   "tosdr": "D",
+   "ours": "B",
+   "score": 72,
+   "n_tags": 11
+  },
+  {
+   "domain": "teamseas.org",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 21
+  },
+  {
+   "domain": "rtlgroup.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 15
+  },
+  {
+   "domain": "mondelezinternational.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 24
+  },
+  {
+   "domain": "sesameworkshop.org",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 23
+  },
+  {
+   "domain": "conversion.io",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 58,
+   "n_tags": 16
+  },
+  {
+   "domain": "thegameawards.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 24
+  },
+  {
+   "domain": "litcharts.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 29
+  },
+  {
+   "domain": "giftcardquiz.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 27
+  },
+  {
+   "domain": "gfs.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 17
+  },
+  {
+   "domain": "4-h.org",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 43,
+   "n_tags": 23
+  },
+  {
+   "domain": "specialneedsequipment.eu",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 16
+  },
+  {
+   "domain": "hover.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 60,
+   "n_tags": 17
+  },
+  {
+   "domain": "extremereach.com",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 61,
+   "n_tags": 16
+  },
+  {
+   "domain": "choozle.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 33
+  },
+  {
+   "domain": "earnably.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 24
+  },
+  {
+   "domain": "wappalyzer.com",
+   "tosdr": "E",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 11
+  },
+  {
+   "domain": "dmgmedia.co.uk",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 45,
+   "n_tags": 26
+  },
+  {
+   "domain": "arte.tv",
+   "tosdr": "A",
+   "ours": "C",
+   "score": 55,
+   "n_tags": 18
+  },
+  {
+   "domain": "anyflip.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 46,
+   "n_tags": 29
+  },
+  {
+   "domain": "taa.org",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 0
+  },
+  {
+   "domain": "animemusicquiz.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 20
+  },
+  {
+   "domain": "youvisit.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 29
+  },
+  {
+   "domain": "mycleanpc.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 43,
+   "n_tags": 28
+  },
+  {
+   "domain": "allenai.org",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 12
+  },
+  {
+   "domain": "ubackup.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 14
+  },
+  {
+   "domain": "connorcode.com",
+   "tosdr": "A",
+   "ours": "C",
+   "score": 70,
+   "n_tags": 3
+  },
+  {
+   "domain": "webhostingsecretrevealed.net",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 11
+  },
+  {
+   "domain": "askzeta.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 46,
+   "n_tags": 31
+  },
+  {
+   "domain": "gamebanana.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 26
+  },
+  {
+   "domain": "picmonkey.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 46,
+   "n_tags": 31
+  },
+  {
+   "domain": "adscore.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 24
+  },
+  {
+   "domain": "adata.com",
+   "tosdr": "E",
+   "ours": "C",
+   "score": 55,
+   "n_tags": 20
+  },
+  {
+   "domain": "brainfacts.org",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 16
+  },
+  {
+   "domain": "getupside.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 43,
+   "n_tags": 27
+  },
+  {
+   "domain": "zuru.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 57,
+   "n_tags": 7
+  },
+  {
+   "domain": "drift.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 26
+  },
+  {
+   "domain": "adworkmedia.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 20
+  },
+  {
+   "domain": "scientificamerican.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 32
+  },
+  {
+   "domain": "cloudtax.ca",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 16
+  },
+  {
+   "domain": "substack.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 44,
+   "n_tags": 31
+  },
+  {
+   "domain": "overcast.fm",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 23
+  },
+  {
+   "domain": "azirevpn.com",
+   "tosdr": "C",
+   "ours": "A",
+   "score": 99,
+   "n_tags": 17
+  },
+  {
+   "domain": "mod.io",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 27
+  },
+  {
+   "domain": "alltech.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 61,
+   "n_tags": 14
+  },
+  {
+   "domain": "nurserycam.co.uk",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 16
+  },
+  {
+   "domain": "bigcommerce.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 45,
+   "n_tags": 26
+  },
+  {
+   "domain": "audiomack.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 26
+  },
+  {
+   "domain": "webnovel.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 42,
+   "n_tags": 28
+  },
+  {
+   "domain": "paceline.fit",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 43,
+   "n_tags": 29
+  },
+  {
+   "domain": "castos.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 28
+  },
+  {
+   "domain": "leetify.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 14
+  },
+  {
+   "domain": "warbot.dev",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 17
+  },
+  {
+   "domain": "missingkids.org",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 15
+  },
+  {
+   "domain": "imenupro.com",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 67,
+   "n_tags": 8
+  },
+  {
+   "domain": "fillitforward.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 26
+  },
+  {
+   "domain": "shopsavvy.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 42,
+   "n_tags": 31
+  },
+  {
+   "domain": "y.com.sb",
+   "tosdr": "C",
+   "ours": "B",
+   "score": 75,
+   "n_tags": 3
+  },
+  {
+   "domain": "websitecarbon.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 64,
+   "n_tags": 1
+  },
+  {
+   "domain": "anytype.io",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 13
+  },
+  {
+   "domain": "voices.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 22
+  },
+  {
+   "domain": "organicmaps.app",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 67,
+   "n_tags": 3
+  },
+  {
+   "domain": "coffeestrategies.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 66,
+   "n_tags": 13
+  },
+  {
+   "domain": "hey.cafe",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 65,
+   "n_tags": 9
+  },
+  {
+   "domain": "brainpop.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 48,
+   "n_tags": 30
+  },
+  {
+   "domain": "abuseipdb.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 13
+  },
+  {
+   "domain": "jefawk.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 60,
+   "n_tags": 17
+  },
+  {
+   "domain": "getmydrivers.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 44,
+   "n_tags": 29
+  },
+  {
+   "domain": "swurl.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 32
+  },
+  {
+   "domain": "open-assistant.io",
+   "tosdr": "C",
+   "ours": "B",
+   "score": 76,
+   "n_tags": 15
+  },
+  {
+   "domain": "carpetcleaningnyc.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 6
+  },
+  {
+   "domain": "opm.gov",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 67,
+   "n_tags": 6
+  },
+  {
+   "domain": "cascadeselect.org",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 19
+  },
+  {
+   "domain": "thumbtack.com",
+   "tosdr": "E",
+   "ours": "D",
+   "score": 41,
+   "n_tags": 31
+  },
+  {
+   "domain": "incogni.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 55,
+   "n_tags": 24
+  },
+  {
+   "domain": "netify.ai",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 67,
+   "n_tags": 10
+  },
+  {
+   "domain": "gifthero.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 22
+  },
+  {
+   "domain": "goodbudget.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 23
+  },
+  {
+   "domain": "tron-free.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 60,
+   "n_tags": 16
+  },
+  {
+   "domain": "challenge.gov",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 62,
+   "n_tags": 10
+  },
+  {
+   "domain": "varsitytutors.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 45,
+   "n_tags": 31
+  },
+  {
+   "domain": "supremacy1914.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 68,
+   "n_tags": 19
+  },
+  {
+   "domain": "hometitlelock.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 50,
+   "n_tags": 15
+  },
+  {
+   "domain": "plutus.it",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 25
+  },
+  {
+   "domain": "weeklybudgeting.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 55,
+   "n_tags": 14
+  },
+  {
+   "domain": "travelarrow.io",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 55,
+   "n_tags": 25
+  },
+  {
+   "domain": "debtpayoffplanner.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 52,
+   "n_tags": 27
+  },
+  {
+   "domain": "monarchmoney.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 47,
+   "n_tags": 32
+  },
+  {
+   "domain": "charactercountonline.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 60,
+   "n_tags": 12
+  },
+  {
+   "domain": "httpinjector.com",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 63,
+   "n_tags": 12
+  },
+  {
+   "domain": "house.gov",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 63,
+   "n_tags": 7
+  },
+  {
+   "domain": "blender.org",
+   "tosdr": "B",
+   "ours": "C",
+   "score": 68,
+   "n_tags": 7
+  },
+  {
+   "domain": "isoriver.com",
+   "tosdr": "C",
+   "ours": "B",
+   "score": 76,
+   "n_tags": 18
+  },
+  {
+   "domain": "2miners.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 63,
+   "n_tags": 4
+  },
+  {
+   "domain": "snaptik.app",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 59,
+   "n_tags": 11
+  },
+  {
+   "domain": "pre-commit.ci",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 22
+  },
+  {
+   "domain": "aapd.org",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 8
+  },
+  {
+   "domain": "kiddle.co",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 66,
+   "n_tags": 5
+  },
+  {
+   "domain": "bambulab.com",
+   "tosdr": "C",
+   "ours": "C",
+   "score": 56,
+   "n_tags": 25
+  },
+  {
+   "domain": "1hd-to.org",
+   "tosdr": "D",
+   "ours": "C",
+   "score": 61,
+   "n_tags": 3
+  },
+  {
+   "domain": "careerscrossroad.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 44,
+   "n_tags": 26
+  },
+  {
+   "domain": "greynoise.io",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 54,
+   "n_tags": 12
+  },
+  {
+   "domain": "thetvdb.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 51,
+   "n_tags": 26
+  },
+  {
+   "domain": "latitude.io",
+   "tosdr": "D",
+   "ours": "E",
+   "score": 23,
+   "n_tags": 26
+  },
+  {
+   "domain": "hellotds.com",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 46,
+   "n_tags": 28
+  },
+  {
+   "domain": "pi-hole.net",
+   "tosdr": "C",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 14
+  },
+  {
+   "domain": "rebrandly.com",
+   "tosdr": "D",
+   "ours": "D",
+   "score": 53,
+   "n_tags": 26
+  }
+ ]
+}

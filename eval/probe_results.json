@@ -1,0 +1,104 @@
+[
+ {
+  "domain": "figma.com",
+  "ok": true,
+  "code": "",
+  "msg": "",
+  "docs": 1,
+  "doc_urls": [
+   "privacy:https://www.figma.com/legal/"
+  ],
+  "tags": 0,
+  "grade": "C",
+  "score": 65,
+  "warnings": [
+   "thin_docs",
+   "no_tags"
+  ],
+  "sec": 69.1
+ },
+ {
+  "domain": "heroku.com",
+  "ok": true,
+  "code": "",
+  "msg": "",
+  "docs": 3,
+  "doc_urls": [
+   "privacy:https://www.salesforce.com/company/legal/privacy/?bc=OTH",
+   "terms:https://www.salesforce.com/company/legal/sfdc-website-terms-of-service/?bc=OTH",
+   "other:https://www.salesforce.com/company/legal/disclosure/?bc=OTH"
+  ],
+  "tags": 21,
+  "grade": "D",
+  "score": 51,
+  "warnings": [],
+  "sec": 139.5
+ },
+ {
+  "domain": "dnsneko.com",
+  "ok": true,
+  "code": "",
+  "msg": "",
+  "docs": 2,
+  "doc_urls": [
+   "privacy:https://www.dnsneko.com/privacy",
+   "terms:https://www.dnsneko.com/agreement"
+  ],
+  "tags": 5,
+  "grade": "C",
+  "score": 60,
+  "warnings": [
+   "thin_docs"
+  ],
+  "sec": 18.9
+ },
+ {
+  "domain": "cloud.doulor.cn",
+  "ok": true,
+  "code": "",
+  "msg": "",
+  "docs": 2,
+  "doc_urls": [
+   "privacy:https://cloud.doulor.cn/privacy",
+   "terms:https://cloud.doulor.cn/terms"
+  ],
+  "tags": 15,
+  "grade": "C",
+  "score": 60,
+  "warnings": [],
+  "sec": 44.0
+ },
+ {
+  "domain": "nodeloc.com",
+  "ok": true,
+  "code": "",
+  "msg": "",
+  "docs": 2,
+  "doc_urls": [
+   "privacy:https://www.nodeloc.com/privacy",
+   "terms:https://www.nodeloc.com/tos"
+  ],
+  "tags": 29,
+  "grade": "C",
+  "score": 62,
+  "warnings": [],
+  "sec": 15.6
+ },
+ {
+  "domain": "baidu.com",
+  "ok": true,
+  "code": "",
+  "msg": "",
+  "docs": 3,
+  "doc_urls": [
+   "other:http://www.baidu.com/duty/",
+   "privacy:http://www.baidu.com/duty/yinsiquan-policy.html",
+   "privacy:http://www.baidu.com/duty/yinsiquan-sub.html"
+  ],
+  "tags": 16,
+  "grade": "C",
+  "score": 57,
+  "warnings": [],
+  "sec": 6.8
+ }
+]

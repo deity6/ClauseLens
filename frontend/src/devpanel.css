@@ -1,0 +1,290 @@
+/* ─────────────────────────────────────────────────────────────
+   devpanel.css —— 只服务「临时设计调试面板」与它要试的三件东西。
+   不改 styles.css：这里的每条规则都必须挂在 .devpanel 或 [data-font] 下，
+   不带 ?dev=1 的页面没有这些属性 / 节点，等于这份文件不存在。
+   引入方式：DevPanel.jsx 里 import "../devpanel.css"（Vite 会去重，
+   main.jsx 再加一次 import 也不会重复加载）。
+   ───────────────────────────────────────────────────────────── */
+
+/* ══════════════ 字体组合 ══════════════
+   甲 = 当前，不加任何覆写。
+   乙 = 全楷体：标题、引文、正文都走霞鹜文楷；楷书笔画细，正文补一点字号/行高/字距。
+   丙 = 标题黑体加粗：--display / --serif 换成系统黑体；数字与元数据仍走 --num / --mono。 */
+
+:root[data-font="b"] {
+  --display: "LXGW WenKai", "Kaiti SC", "STKaiti", "KaiTi", serif;
+  --serif: "LXGW WenKai", "Kaiti SC", "STKaiti", "KaiTi", serif;
+  --sans: "LXGW WenKai", "Kaiti SC", "STKaiti", "KaiTi", serif;
+  /* 数字仍是 Instrument Serif：楷体的阿拉伯数字在小字号下辨识度差 */
+  --num: "Instrument Serif", "LXGW WenKai", "Times New Roman", serif;
+}
+
+/* 楷体正文：15px 读起来会发虚，抬到 15.5 / 行高 1.74 / 一点点字距 */
+:root[data-font="b"] body {
+  font-size: 15.5px;
+  line-height: 1.74;
+  letter-spacing: 0.012em;
+}
+/* 楷书标题在 700 时笔画容易「糊」在一起，补一点点描边让笔锋立起来 */
+:root[data-font="b"] .brand__zh,
+:root[data-font="b"] .rhead__site h1 {
+  font-weight: 700;
+  -webkit-text-stroke: 0.35px currentColor;
+}
+
+:root[data-font="c"] {
+  --display: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+  --serif: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  /* --num / --mono 不动：丙 只让「标题」现代化，数字与元数据保留原来的衬线 / 等宽 */
+}
+
+/* 黑体粗标题不需要给楷书补的那 0.3px 描边，去掉更干净 */
+:root[data-font="c"] .rhead__site h1 {
+  -webkit-text-stroke: 0;
+  letter-spacing: -0.015em;
+}
+
+/* ══════════════ 印章形态补丁 ══════════════
+   形态 1（圆环双环）完全沿用 styles.css，这里不碰。
+   形态 2 方章：等级字大一点会顶到内框，缩到 84px；另加两行小字（等级 / CLAUSELENS）。 */
+
+.stamp--v2 .stamp__grade {
+  font-size: 84px;
+}
+.stamp--v2 .stamp__seal-cap {
+  stroke: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.26em;
+}
+.stamp--v2 .stamp__seal-cap--tiny {
+  font-size: 7.5px;
+  letter-spacing: 0.3em;
+}
+
+/* 形态 3 双色叠印：后层走青墨（--g-B）并压低不透明度，前层稍微透一点让后层露出来 */
+.stamp--v3 .stamp__ghost {
+  --st: var(--g-B);
+  opacity: 0.34;
+}
+.stamp--v3 .stamp__body--front {
+  opacity: 0.93;
+}
+
+/* ══════════════ 面板本体 ══════════════ */
+.devpanel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 9999;
+  font-family: var(--sans);
+  color: var(--ink);
+  color-scheme: light dark;
+}
+
+.devpanel__card {
+  width: 264px;
+  display: grid;
+  gap: 9px;
+  padding: 10px 12px 9px;
+  background: var(--paper);
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  box-shadow: var(--sh-3), var(--sh-2);
+}
+
+.devpanel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 1px;
+}
+.devpanel__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+}
+.devpanel__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--g-B);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--g-B) 18%, transparent);
+}
+.devpanel__tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.devpanel__link,
+.devpanel__close {
+  border: 0;
+  background: none;
+  padding: 2px 5px;
+  border-radius: 5px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+  cursor: pointer;
+  line-height: 1.6;
+}
+.devpanel__close {
+  font-size: 14px;
+  padding: 0 5px;
+  line-height: 1.2;
+}
+.devpanel__link:hover,
+.devpanel__close:hover {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+.devpanel__group {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.devpanel__legend {
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.devpanel__seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+}
+.devpanel__opt {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 27px;
+  padding: 0 2px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper-2);
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background-color var(--t-micro) var(--e-out), color var(--t-micro) var(--e-out), border-color var(--t-micro) var(--e-out),
+    transform var(--t-micro) var(--e-out);
+}
+.devpanel__opt:hover {
+  border-color: var(--line-2);
+  transform: translateY(-1px);
+}
+.devpanel__opt input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.devpanel__opt.is-on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+}
+.devpanel__opt:has(input:focus-visible) {
+  outline: 2px solid var(--g-B);
+  outline-offset: 2px;
+}
+
+.devpanel__preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 2px 1px;
+}
+.devpanel__pv {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.devpanel__pv em {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
+}
+.devpanel__pv:nth-child(1) svg { color: var(--bad); }
+.devpanel__pv:nth-child(2) svg { color: var(--good); }
+.devpanel__pv:nth-child(3) svg { color: var(--neutral); }
+.devpanel__pv:nth-child(4) svg { color: var(--warn); }
+
+.devpanel__foot {
+  margin: 1px 0 0;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+
+/* 收起后的小圆钮 */
+.devpanel__fab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--sh-2), var(--sh-1);
+  cursor: pointer;
+  transition: transform var(--t-micro) var(--e-out), border-color var(--t-micro) var(--e-out);
+}
+.devpanel__fab:hover {
+  transform: translateY(-2px);
+  border-color: var(--g-B);
+}
+.devpanel__fablbl {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+}
+.devpanel__fabval {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  line-height: 1.2;
+}
+
+@media (max-width: 720px) {
+  .devpanel {
+    right: 10px;
+    bottom: 10px;
+  }
+  .devpanel__card {
+    width: 232px;
+    gap: 8px;
+  }
+}

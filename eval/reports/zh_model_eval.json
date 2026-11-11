@@ -1,0 +1,638 @@
+{
+ "rule": {
+  "micro": {
+   "precision": 0.507,
+   "recall": 0.381,
+   "f1": 0.435
+  },
+  "per_label": {
+   "account-termination-anytime": {
+    "precision": 0.25,
+    "recall": 0.333,
+    "f1": 0.286,
+    "support": 3,
+    "fp": 3
+   },
+   "ai-training": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 2,
+    "fp": 0
+   },
+   "broad-content-license": {
+    "precision": 1.0,
+    "recall": 0.5,
+    "f1": 0.667,
+    "support": 4,
+    "fp": 0
+   },
+   "broad-liability-waiver": {
+    "precision": 0.286,
+    "recall": 0.286,
+    "f1": 0.286,
+    "support": 7,
+    "fp": 5
+   },
+   "can-delete-data": {
+    "precision": 1.0,
+    "recall": 0.4,
+    "f1": 0.571,
+    "support": 5,
+    "fp": 0
+   },
+   "can-export-data": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 0
+   },
+   "clear-retention": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 0
+   },
+   "collects-contacts-device": {
+    "precision": 0.75,
+    "recall": 0.6,
+    "f1": 0.667,
+    "support": 5,
+    "fp": 1
+   },
+   "collects-sensitive": {
+    "precision": 0.333,
+    "recall": 0.5,
+    "f1": 0.4,
+    "support": 2,
+    "fp": 2
+   },
+   "contact-dpo": {
+    "precision": 0.286,
+    "recall": 1.0,
+    "f1": 0.444,
+    "support": 2,
+    "fp": 5
+   },
+   "content-removal-discretion": {
+    "precision": 0.667,
+    "recall": 0.5,
+    "f1": 0.571,
+    "support": 4,
+    "fp": 1
+   },
+   "cross-border-transfer": {
+    "precision": 0.5,
+    "recall": 0.5,
+    "f1": 0.5,
+    "support": 2,
+    "fp": 1
+   },
+   "data-minimization": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 1,
+    "fp": 0
+   },
+   "data-sold-or-shared": {
+    "precision": 0.167,
+    "recall": 0.143,
+    "f1": 0.154,
+    "support": 7,
+    "fp": 5
+   },
+   "default-consent": {
+    "precision": 1.0,
+    "recall": 0.6,
+    "f1": 0.75,
+    "support": 10,
+    "fp": 0
+   },
+   "easy-account-deletion": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 1,
+    "fp": 3
+   },
+   "far-jurisdiction": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 1
+   },
+   "gov-disclosure": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 0
+   },
+   "hard-account-deletion": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 0
+   },
+   "minors-protection": {
+    "precision": 0.545,
+    "recall": 0.75,
+    "f1": 0.632,
+    "support": 8,
+    "fp": 5
+   },
+   "no-automated-access": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 0
+   },
+   "no-tracking": {
+    "precision": 0.0,
+    "recall": 0,
+    "f1": 0,
+    "support": 0,
+    "fp": 1
+   },
+   "not-sold": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 4,
+    "fp": 0
+   },
+   "notify-breach": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 1,
+    "fp": 0
+   },
+   "personalized-ads": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 1,
+    "fp": 1
+   },
+   "terms-change-no-notice": {
+    "precision": 1.0,
+    "recall": 0.8,
+    "f1": 0.889,
+    "support": 5,
+    "fp": 0
+   },
+   "terms-change-notice": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 3,
+    "fp": 1
+   },
+   "tracks-across-sites": {
+    "precision": 0.0,
+    "recall": 0,
+    "f1": 0,
+    "support": 0,
+    "fp": 1
+   },
+   "user-indemnifies": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 7,
+    "fp": 0
+   },
+   "you-own-content": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 1,
+    "fp": 0
+   }
+  }
+ },
+ "model": {
+  "micro": {
+   "precision": 0.677,
+   "recall": 0.433,
+   "f1": 0.528
+  },
+  "per_label": {
+   "account-termination-anytime": {
+    "precision": 1.0,
+    "recall": 0.333,
+    "f1": 0.5,
+    "support": 3,
+    "fp": 0
+   },
+   "ai-training": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 0
+   },
+   "broad-content-license": {
+    "precision": 1.0,
+    "recall": 0.5,
+    "f1": 0.667,
+    "support": 4,
+    "fp": 0
+   },
+   "broad-liability-waiver": {
+    "precision": 0.375,
+    "recall": 0.429,
+    "f1": 0.4,
+    "support": 7,
+    "fp": 5
+   },
+   "can-delete-data": {
+    "precision": 0.8,
+    "recall": 0.8,
+    "f1": 0.8,
+    "support": 5,
+    "fp": 1
+   },
+   "can-export-data": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 0
+   },
+   "clear-retention": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 0
+   },
+   "collects-contacts-device": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 5,
+    "fp": 1
+   },
+   "collects-sensitive": {
+    "precision": 1.0,
+    "recall": 0.5,
+    "f1": 0.667,
+    "support": 2,
+    "fp": 0
+   },
+   "contact-dpo": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 1
+   },
+   "content-removal-discretion": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 4,
+    "fp": 0
+   },
+   "cross-border-transfer": {
+    "precision": 1.0,
+    "recall": 0.5,
+    "f1": 0.667,
+    "support": 2,
+    "fp": 0
+   },
+   "data-minimization": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 1,
+    "fp": 0
+   },
+   "data-sold-or-shared": {
+    "precision": 0.6,
+    "recall": 0.429,
+    "f1": 0.5,
+    "support": 7,
+    "fp": 2
+   },
+   "default-consent": {
+    "precision": 1.0,
+    "recall": 0.8,
+    "f1": 0.889,
+    "support": 10,
+    "fp": 0
+   },
+   "easy-account-deletion": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 1,
+    "fp": 0
+   },
+   "far-jurisdiction": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 1
+   },
+   "gov-disclosure": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 2,
+    "fp": 0
+   },
+   "hard-account-deletion": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 0
+   },
+   "minors-protection": {
+    "precision": 0.571,
+    "recall": 0.5,
+    "f1": 0.533,
+    "support": 8,
+    "fp": 3
+   },
+   "no-automated-access": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 0
+   },
+   "not-sold": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 4,
+    "fp": 0
+   },
+   "notify-breach": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 1,
+    "fp": 0
+   },
+   "personalized-ads": {
+    "precision": 0.5,
+    "recall": 1.0,
+    "f1": 0.667,
+    "support": 1,
+    "fp": 1
+   },
+   "terms-change-no-notice": {
+    "precision": 0.444,
+    "recall": 0.8,
+    "f1": 0.571,
+    "support": 5,
+    "fp": 5
+   },
+   "terms-change-notice": {
+    "precision": 1.0,
+    "recall": 0.333,
+    "f1": 0.5,
+    "support": 3,
+    "fp": 0
+   },
+   "user-indemnifies": {
+    "precision": 1.0,
+    "recall": 0.714,
+    "f1": 0.833,
+    "support": 7,
+    "fp": 0
+   },
+   "you-own-content": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 1,
+    "fp": 0
+   }
+  }
+ },
+ "fused": {
+  "micro": {
+   "precision": 0.646,
+   "recall": 0.546,
+   "f1": 0.592
+  },
+  "per_label": {
+   "account-termination-anytime": {
+    "precision": 1.0,
+    "recall": 0.667,
+    "f1": 0.8,
+    "support": 3,
+    "fp": 0
+   },
+   "ai-training": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 2,
+    "fp": 0
+   },
+   "broad-content-license": {
+    "precision": 1.0,
+    "recall": 0.5,
+    "f1": 0.667,
+    "support": 4,
+    "fp": 0
+   },
+   "broad-liability-waiver": {
+    "precision": 0.3,
+    "recall": 0.429,
+    "f1": 0.353,
+    "support": 7,
+    "fp": 7
+   },
+   "can-delete-data": {
+    "precision": 0.8,
+    "recall": 0.8,
+    "f1": 0.8,
+    "support": 5,
+    "fp": 1
+   },
+   "can-export-data": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 0
+   },
+   "clear-retention": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 0
+   },
+   "collects-contacts-device": {
+    "precision": 0.75,
+    "recall": 0.6,
+    "f1": 0.667,
+    "support": 5,
+    "fp": 1
+   },
+   "collects-sensitive": {
+    "precision": 0.5,
+    "recall": 0.5,
+    "f1": 0.5,
+    "support": 2,
+    "fp": 1
+   },
+   "contact-dpo": {
+    "precision": 0.333,
+    "recall": 1.0,
+    "f1": 0.5,
+    "support": 2,
+    "fp": 4
+   },
+   "content-removal-discretion": {
+    "precision": 1.0,
+    "recall": 0.25,
+    "f1": 0.4,
+    "support": 4,
+    "fp": 0
+   },
+   "cross-border-transfer": {
+    "precision": 1.0,
+    "recall": 0.5,
+    "f1": 0.667,
+    "support": 2,
+    "fp": 0
+   },
+   "data-minimization": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 1,
+    "fp": 0
+   },
+   "data-sold-or-shared": {
+    "precision": 0.6,
+    "recall": 0.429,
+    "f1": 0.5,
+    "support": 7,
+    "fp": 2
+   },
+   "default-consent": {
+    "precision": 1.0,
+    "recall": 0.7,
+    "f1": 0.824,
+    "support": 10,
+    "fp": 0
+   },
+   "easy-account-deletion": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 1,
+    "fp": 0
+   },
+   "far-jurisdiction": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 1
+   },
+   "gov-disclosure": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 2,
+    "fp": 0
+   },
+   "hard-account-deletion": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 0
+   },
+   "minors-protection": {
+    "precision": 0.6,
+    "recall": 0.75,
+    "f1": 0.667,
+    "support": 8,
+    "fp": 4
+   },
+   "no-automated-access": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 2,
+    "fp": 0
+   },
+   "no-tracking": {
+    "precision": 0.0,
+    "recall": 0,
+    "f1": 0,
+    "support": 0,
+    "fp": 1
+   },
+   "not-sold": {
+    "precision": 0,
+    "recall": 0.0,
+    "f1": 0,
+    "support": 4,
+    "fp": 0
+   },
+   "notify-breach": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 1,
+    "fp": 0
+   },
+   "personalized-ads": {
+    "precision": 0.333,
+    "recall": 1.0,
+    "f1": 0.5,
+    "support": 1,
+    "fp": 2
+   },
+   "terms-change-no-notice": {
+    "precision": 0.444,
+    "recall": 0.8,
+    "f1": 0.571,
+    "support": 5,
+    "fp": 5
+   },
+   "terms-change-notice": {
+    "precision": 1.0,
+    "recall": 0.333,
+    "f1": 0.5,
+    "support": 3,
+    "fp": 0
+   },
+   "user-indemnifies": {
+    "precision": 1.0,
+    "recall": 0.714,
+    "f1": 0.833,
+    "support": 7,
+    "fp": 0
+   },
+   "you-own-content": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 1,
+    "fp": 0
+   }
+  }
+ }
+}

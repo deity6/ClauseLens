@@ -1,0 +1,835 @@
+{
+ "n_train": 18094,
+ "n_test": 4154,
+ "n_train_sites": 1423,
+ "n_test_sites": 354,
+ "leak_check_overlap_sites": 0,
+ "labels_trained": [
+  "account-termination-anytime",
+  "broad-content-license",
+  "broad-liability-waiver",
+  "can-delete-data",
+  "can-export-data",
+  "class-action-waiver",
+  "clear-retention",
+  "collects-beyond-service",
+  "collects-contacts-device",
+  "collects-sensitive",
+  "contact-dpo",
+  "content-removal-discretion",
+  "cross-border-transfer",
+  "data-minimization",
+  "data-sold-or-shared",
+  "default-consent",
+  "easy-account-deletion",
+  "far-jurisdiction",
+  "forced-arbitration",
+  "gov-disclosure",
+  "hard-account-deletion",
+  "indefinite-retention",
+  "liability-cap",
+  "no-automated-access",
+  "no-tracking",
+  "not-sold",
+  "notify-breach",
+  "personalized-ads",
+  "terms-change-no-notice",
+  "terms-change-notice",
+  "tracks-across-sites",
+  "user-indemnifies",
+  "you-own-content"
+ ],
+ "thresholds": {
+  "account-termination-anytime": 0.925,
+  "broad-content-license": 0.85,
+  "broad-liability-waiver": 0.875,
+  "can-delete-data": 0.95,
+  "can-export-data": 0.825,
+  "class-action-waiver": 0.3,
+  "clear-retention": 0.625,
+  "collects-beyond-service": 0.875,
+  "collects-contacts-device": 0.3,
+  "collects-sensitive": 0.95,
+  "contact-dpo": 0.775,
+  "content-removal-discretion": 0.825,
+  "cross-border-transfer": 0.55,
+  "data-minimization": 0.4,
+  "data-sold-or-shared": 0.875,
+  "default-consent": 0.925,
+  "easy-account-deletion": 0.825,
+  "far-jurisdiction": 0.625,
+  "forced-arbitration": 0.9,
+  "gov-disclosure": 0.625,
+  "hard-account-deletion": 0.875,
+  "indefinite-retention": 0.95,
+  "liability-cap": 0.35,
+  "no-automated-access": 0.475,
+  "no-tracking": 0.9,
+  "not-sold": 0.95,
+  "notify-breach": 0.475,
+  "personalized-ads": 0.675,
+  "terms-change-no-notice": 0.95,
+  "terms-change-notice": 0.9,
+  "tracks-across-sites": 0.9,
+  "user-indemnifies": 0.6,
+  "you-own-content": 0.45
+ },
+ "rule": {
+  "micro": {
+   "precision": 0.536,
+   "recall": 0.198,
+   "f1": 0.289
+  },
+  "macro_f1": 0.266,
+  "per_label": {
+   "account-termination-anytime": {
+    "precision": 0.522,
+    "recall": 0.15,
+    "f1": 0.233,
+    "support": 80,
+    "fp": 11
+   },
+   "broad-content-license": {
+    "precision": 0.45,
+    "recall": 0.237,
+    "f1": 0.31,
+    "support": 38,
+    "fp": 11
+   },
+   "broad-liability-waiver": {
+    "precision": 0.975,
+    "recall": 0.155,
+    "f1": 0.268,
+    "support": 251,
+    "fp": 1
+   },
+   "can-delete-data": {
+    "precision": 0.724,
+    "recall": 0.256,
+    "f1": 0.378,
+    "support": 82,
+    "fp": 8
+   },
+   "can-export-data": {
+    "precision": 0.5,
+    "recall": 0.32,
+    "f1": 0.39,
+    "support": 25,
+    "fp": 8
+   },
+   "class-action-waiver": {
+    "precision": 0.5,
+    "recall": 0.071,
+    "f1": 0.125,
+    "support": 28,
+    "fp": 2
+   },
+   "clear-retention": {
+    "precision": 0.5,
+    "recall": 0.045,
+    "f1": 0.083,
+    "support": 44,
+    "fp": 2
+   },
+   "collects-beyond-service": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "support": 73,
+    "fp": 3
+   },
+   "collects-contacts-device": {
+    "precision": 0.2,
+    "recall": 0.625,
+    "f1": 0.303,
+    "support": 8,
+    "fp": 20
+   },
+   "collects-sensitive": {
+    "precision": 0.438,
+    "recall": 0.143,
+    "f1": 0.215,
+    "support": 49,
+    "fp": 9
+   },
+   "contact-dpo": {
+    "precision": 0.462,
+    "recall": 0.375,
+    "f1": 0.414,
+    "support": 32,
+    "fp": 14
+   },
+   "content-removal-discretion": {
+    "precision": 0.6,
+    "recall": 0.056,
+    "f1": 0.102,
+    "support": 54,
+    "fp": 2
+   },
+   "cross-border-transfer": {
+    "precision": 0.8,
+    "recall": 0.145,
+    "f1": 0.246,
+    "support": 55,
+    "fp": 2
+   },
+   "data-minimization": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "support": 45,
+    "fp": 0
+   },
+   "data-sold-or-shared": {
+    "precision": 0.344,
+    "recall": 0.094,
+    "f1": 0.148,
+    "support": 117,
+    "fp": 21
+   },
+   "default-consent": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "support": 41,
+    "fp": 6
+   },
+   "easy-account-deletion": {
+    "precision": 0.36,
+    "recall": 0.196,
+    "f1": 0.254,
+    "support": 46,
+    "fp": 16
+   },
+   "far-jurisdiction": {
+    "precision": 0.636,
+    "recall": 0.082,
+    "f1": 0.146,
+    "support": 85,
+    "fp": 4
+   },
+   "forced-arbitration": {
+    "precision": 0.632,
+    "recall": 0.706,
+    "f1": 0.667,
+    "support": 17,
+    "fp": 7
+   },
+   "gov-disclosure": {
+    "precision": 0.455,
+    "recall": 0.741,
+    "f1": 0.563,
+    "support": 27,
+    "fp": 24
+   },
+   "hard-account-deletion": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "support": 4,
+    "fp": 0
+   },
+   "indefinite-retention": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "support": 37,
+    "fp": 1
+   },
+   "liability-cap": {
+    "precision": 0.444,
+    "recall": 0.2,
+    "f1": 0.276,
+    "support": 20,
+    "fp": 5
+   },
+   "no-automated-access": {
+    "precision": 0.808,
+    "recall": 0.84,
+    "f1": 0.824,
+    "support": 25,
+    "fp": 5
+   },
+   "no-tracking": {
+    "precision": 0.267,
+    "recall": 0.267,
+    "f1": 0.267,
+    "support": 60,
+    "fp": 44
+   },
+   "not-sold": {
+    "precision": 0.846,
+    "recall": 0.139,
+    "f1": 0.239,
+    "support": 79,
+    "fp": 2
+   },
+   "notify-breach": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "support": 7,
+    "fp": 0
+   },
+   "personalized-ads": {
+    "precision": 0.422,
+    "recall": 0.13,
+    "f1": 0.199,
+    "support": 146,
+    "fp": 26
+   },
+   "terms-change-no-notice": {
+    "precision": 0.152,
+    "recall": 0.258,
+    "f1": 0.191,
+    "support": 66,
+    "fp": 95
+   },
+   "terms-change-notice": {
+    "precision": 0.571,
+    "recall": 0.089,
+    "f1": 0.154,
+    "support": 45,
+    "fp": 3
+   },
+   "tracks-across-sites": {
+    "precision": 0.855,
+    "recall": 0.213,
+    "f1": 0.341,
+    "support": 333,
+    "fp": 12
+   },
+   "user-indemnifies": {
+    "precision": 1.0,
+    "recall": 0.836,
+    "f1": 0.911,
+    "support": 67,
+    "fp": 0
+   },
+   "you-own-content": {
+    "precision": 1.0,
+    "recall": 0.35,
+    "f1": 0.519,
+    "support": 40,
+    "fp": 0
+   }
+  }
+ },
+ "model": {
+  "micro": {
+   "precision": 0.778,
+   "recall": 0.692,
+   "f1": 0.733
+  },
+  "macro_f1": 0.716,
+  "per_label": {
+   "account-termination-anytime": {
+    "precision": 0.711,
+    "recall": 0.675,
+    "f1": 0.692,
+    "support": 80,
+    "fp": 22
+   },
+   "broad-content-license": {
+    "precision": 0.71,
+    "recall": 0.579,
+    "f1": 0.638,
+    "support": 38,
+    "fp": 9
+   },
+   "broad-liability-waiver": {
+    "precision": 0.95,
+    "recall": 0.825,
+    "f1": 0.883,
+    "support": 251,
+    "fp": 11
+   },
+   "can-delete-data": {
+    "precision": 0.778,
+    "recall": 0.598,
+    "f1": 0.676,
+    "support": 82,
+    "fp": 14
+   },
+   "can-export-data": {
+    "precision": 0.769,
+    "recall": 0.4,
+    "f1": 0.526,
+    "support": 25,
+    "fp": 3
+   },
+   "class-action-waiver": {
+    "precision": 0.867,
+    "recall": 0.929,
+    "f1": 0.897,
+    "support": 28,
+    "fp": 4
+   },
+   "clear-retention": {
+    "precision": 0.592,
+    "recall": 0.659,
+    "f1": 0.624,
+    "support": 44,
+    "fp": 20
+   },
+   "collects-beyond-service": {
+    "precision": 0.733,
+    "recall": 0.452,
+    "f1": 0.559,
+    "support": 73,
+    "fp": 12
+   },
+   "collects-contacts-device": {
+    "precision": 0.4,
+    "recall": 0.75,
+    "f1": 0.522,
+    "support": 8,
+    "fp": 9
+   },
+   "collects-sensitive": {
+    "precision": 0.821,
+    "recall": 0.469,
+    "f1": 0.597,
+    "support": 49,
+    "fp": 5
+   },
+   "contact-dpo": {
+    "precision": 0.788,
+    "recall": 0.812,
+    "f1": 0.8,
+    "support": 32,
+    "fp": 7
+   },
+   "content-removal-discretion": {
+    "precision": 0.881,
+    "recall": 0.685,
+    "f1": 0.771,
+    "support": 54,
+    "fp": 5
+   },
+   "cross-border-transfer": {
+    "precision": 0.868,
+    "recall": 0.836,
+    "f1": 0.852,
+    "support": 55,
+    "fp": 7
+   },
+   "data-minimization": {
+    "precision": 0.273,
+    "recall": 0.333,
+    "f1": 0.3,
+    "support": 45,
+    "fp": 40
+   },
+   "data-sold-or-shared": {
+    "precision": 0.755,
+    "recall": 0.607,
+    "f1": 0.673,
+    "support": 117,
+    "fp": 23
+   },
+   "default-consent": {
+    "precision": 0.837,
+    "recall": 0.878,
+    "f1": 0.857,
+    "support": 41,
+    "fp": 7
+   },
+   "easy-account-deletion": {
+    "precision": 0.766,
+    "recall": 0.783,
+    "f1": 0.774,
+    "support": 46,
+    "fp": 11
+   },
+   "far-jurisdiction": {
+    "precision": 0.802,
+    "recall": 0.812,
+    "f1": 0.807,
+    "support": 85,
+    "fp": 17
+   },
+   "forced-arbitration": {
+    "precision": 0.778,
+    "recall": 0.824,
+    "f1": 0.8,
+    "support": 17,
+    "fp": 4
+   },
+   "gov-disclosure": {
+    "precision": 0.55,
+    "recall": 0.815,
+    "f1": 0.657,
+    "support": 27,
+    "fp": 18
+   },
+   "hard-account-deletion": {
+    "precision": 0.6,
+    "recall": 0.75,
+    "f1": 0.667,
+    "support": 4,
+    "fp": 2
+   },
+   "indefinite-retention": {
+    "precision": 0.741,
+    "recall": 0.541,
+    "f1": 0.625,
+    "support": 37,
+    "fp": 7
+   },
+   "liability-cap": {
+    "precision": 1.0,
+    "recall": 0.9,
+    "f1": 0.947,
+    "support": 20,
+    "fp": 0
+   },
+   "no-automated-access": {
+    "precision": 0.92,
+    "recall": 0.92,
+    "f1": 0.92,
+    "support": 25,
+    "fp": 2
+   },
+   "no-tracking": {
+    "precision": 0.852,
+    "recall": 0.383,
+    "f1": 0.529,
+    "support": 60,
+    "fp": 4
+   },
+   "not-sold": {
+    "precision": 0.964,
+    "recall": 0.684,
+    "f1": 0.8,
+    "support": 79,
+    "fp": 2
+   },
+   "notify-breach": {
+    "precision": 0.75,
+    "recall": 0.857,
+    "f1": 0.8,
+    "support": 7,
+    "fp": 2
+   },
+   "personalized-ads": {
+    "precision": 0.648,
+    "recall": 0.719,
+    "f1": 0.682,
+    "support": 146,
+    "fp": 57
+   },
+   "terms-change-no-notice": {
+    "precision": 0.782,
+    "recall": 0.652,
+    "f1": 0.711,
+    "support": 66,
+    "fp": 12
+   },
+   "terms-change-notice": {
+    "precision": 0.455,
+    "recall": 0.444,
+    "f1": 0.449,
+    "support": 45,
+    "fp": 24
+   },
+   "tracks-across-sites": {
+    "precision": 0.816,
+    "recall": 0.679,
+    "f1": 0.741,
+    "support": 333,
+    "fp": 51
+   },
+   "user-indemnifies": {
+    "precision": 0.954,
+    "recall": 0.925,
+    "f1": 0.939,
+    "support": 67,
+    "fp": 3
+   },
+   "you-own-content": {
+    "precision": 0.884,
+    "recall": 0.95,
+    "f1": 0.916,
+    "support": 40,
+    "fp": 5
+   }
+  }
+ },
+ "fused": {
+  "micro": {
+   "precision": 0.773,
+   "recall": 0.702,
+   "f1": 0.736
+  },
+  "macro_f1": 0.721,
+  "per_label": {
+   "account-termination-anytime": {
+    "precision": 0.691,
+    "recall": 0.7,
+    "f1": 0.696,
+    "support": 80,
+    "fp": 25
+   },
+   "broad-content-license": {
+    "precision": 0.676,
+    "recall": 0.605,
+    "f1": 0.639,
+    "support": 38,
+    "fp": 11
+   },
+   "broad-liability-waiver": {
+    "precision": 0.95,
+    "recall": 0.829,
+    "f1": 0.885,
+    "support": 251,
+    "fp": 11
+   },
+   "can-delete-data": {
+    "precision": 0.781,
+    "recall": 0.61,
+    "f1": 0.685,
+    "support": 82,
+    "fp": 14
+   },
+   "can-export-data": {
+    "precision": 0.75,
+    "recall": 0.48,
+    "f1": 0.585,
+    "support": 25,
+    "fp": 4
+   },
+   "class-action-waiver": {
+    "precision": 0.897,
+    "recall": 0.929,
+    "f1": 0.912,
+    "support": 28,
+    "fp": 3
+   },
+   "clear-retention": {
+    "precision": 0.592,
+    "recall": 0.659,
+    "f1": 0.624,
+    "support": 44,
+    "fp": 20
+   },
+   "collects-beyond-service": {
+    "precision": 0.733,
+    "recall": 0.452,
+    "f1": 0.559,
+    "support": 73,
+    "fp": 12
+   },
+   "collects-contacts-device": {
+    "precision": 0.4,
+    "recall": 0.75,
+    "f1": 0.522,
+    "support": 8,
+    "fp": 9
+   },
+   "collects-sensitive": {
+    "precision": 0.793,
+    "recall": 0.469,
+    "f1": 0.59,
+    "support": 49,
+    "fp": 6
+   },
+   "contact-dpo": {
+    "precision": 0.75,
+    "recall": 0.844,
+    "f1": 0.794,
+    "support": 32,
+    "fp": 9
+   },
+   "content-removal-discretion": {
+    "precision": 0.841,
+    "recall": 0.685,
+    "f1": 0.755,
+    "support": 54,
+    "fp": 7
+   },
+   "cross-border-transfer": {
+    "precision": 0.868,
+    "recall": 0.836,
+    "f1": 0.852,
+    "support": 55,
+    "fp": 7
+   },
+   "data-minimization": {
+    "precision": 0.378,
+    "recall": 0.311,
+    "f1": 0.341,
+    "support": 45,
+    "fp": 23
+   },
+   "data-sold-or-shared": {
+    "precision": 0.72,
+    "recall": 0.615,
+    "f1": 0.664,
+    "support": 117,
+    "fp": 28
+   },
+   "default-consent": {
+    "precision": 0.837,
+    "recall": 0.878,
+    "f1": 0.857,
+    "support": 41,
+    "fp": 7
+   },
+   "easy-account-deletion": {
+    "precision": 0.735,
+    "recall": 0.783,
+    "f1": 0.758,
+    "support": 46,
+    "fp": 13
+   },
+   "far-jurisdiction": {
+    "precision": 0.793,
+    "recall": 0.812,
+    "f1": 0.802,
+    "support": 85,
+    "fp": 18
+   },
+   "forced-arbitration": {
+    "precision": 0.789,
+    "recall": 0.882,
+    "f1": 0.833,
+    "support": 17,
+    "fp": 4
+   },
+   "gov-disclosure": {
+    "precision": 0.524,
+    "recall": 0.815,
+    "f1": 0.638,
+    "support": 27,
+    "fp": 20
+   },
+   "hard-account-deletion": {
+    "precision": 0.6,
+    "recall": 0.75,
+    "f1": 0.667,
+    "support": 4,
+    "fp": 2
+   },
+   "indefinite-retention": {
+    "precision": 0.714,
+    "recall": 0.541,
+    "f1": 0.615,
+    "support": 37,
+    "fp": 8
+   },
+   "liability-cap": {
+    "precision": 1.0,
+    "recall": 0.9,
+    "f1": 0.947,
+    "support": 20,
+    "fp": 0
+   },
+   "no-automated-access": {
+    "precision": 0.885,
+    "recall": 0.92,
+    "f1": 0.902,
+    "support": 25,
+    "fp": 3
+   },
+   "no-tracking": {
+    "precision": 0.737,
+    "recall": 0.467,
+    "f1": 0.571,
+    "support": 60,
+    "fp": 10
+   },
+   "not-sold": {
+    "precision": 0.947,
+    "recall": 0.684,
+    "f1": 0.794,
+    "support": 79,
+    "fp": 3
+   },
+   "notify-breach": {
+    "precision": 0.857,
+    "recall": 0.857,
+    "f1": 0.857,
+    "support": 7,
+    "fp": 1
+   },
+   "personalized-ads": {
+    "precision": 0.641,
+    "recall": 0.733,
+    "f1": 0.684,
+    "support": 146,
+    "fp": 60
+   },
+   "terms-change-no-notice": {
+    "precision": 0.721,
+    "recall": 0.667,
+    "f1": 0.693,
+    "support": 66,
+    "fp": 17
+   },
+   "terms-change-notice": {
+    "precision": 0.455,
+    "recall": 0.444,
+    "f1": 0.449,
+    "support": 45,
+    "fp": 24
+   },
+   "tracks-across-sites": {
+    "precision": 0.809,
+    "recall": 0.688,
+    "f1": 0.744,
+    "support": 333,
+    "fp": 54
+   },
+   "user-indemnifies": {
+    "precision": 0.954,
+    "recall": 0.925,
+    "f1": 0.939,
+    "support": 67,
+    "fp": 3
+   },
+   "you-own-content": {
+    "precision": 0.95,
+    "recall": 0.95,
+    "f1": 0.95,
+    "support": 40,
+    "fp": 2
+   }
+  }
+ },
+ "label_support_train": {
+  "tracks-across-sites": 1402,
+  "terms-change-notice": 200,
+  "broad-content-license": 188,
+  "account-termination-anytime": 338,
+  "class-action-waiver": 148,
+  "data-sold-or-shared": 581,
+  "terms-change-no-notice": 237,
+  "gov-disclosure": 114,
+  "clear-retention": 152,
+  "far-jurisdiction": 352,
+  "broad-liability-waiver": 1088,
+  "can-export-data": 117,
+  "easy-account-deletion": 213,
+  "personalized-ads": 587,
+  "user-indemnifies": 329,
+  "hard-account-deletion": 37,
+  "collects-contacts-device": 18,
+  "content-removal-discretion": 234,
+  "you-own-content": 153,
+  "not-sold": 287,
+  "can-delete-data": 336,
+  "data-minimization": 174,
+  "no-tracking": 195,
+  "liability-cap": 111,
+  "no-automated-access": 123,
+  "collects-beyond-service": 367,
+  "indefinite-retention": 175,
+  "cross-border-transfer": 170,
+  "contact-dpo": 89,
+  "forced-arbitration": 145,
+  "collects-sensitive": 204,
+  "notify-breach": 40,
+  "default-consent": 211
+ }
+}
