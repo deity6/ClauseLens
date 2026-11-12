@@ -76,6 +76,17 @@ frontend/            ← React + Vite + motion 前端
 - 指标：每个标签的 precision / recall / F1，以及等级一致率（与 ToS;DR 人工等级对比）。报告由 `eval/` 脚本生成。
 - 模型不确定时宁可「未发现」也不乱贴负面标签——**误伤一个友好网站比漏判更伤信任**；评分看 precision。
 
+## 5.5 改完立刻验证（血的教训）
+
+动过 pipeline.py / discover.py / net.py 之后，**不能只看 systemctl is-active**。至少跑一次：
+
+    ssh <主机别名> 'cd ~/clauselens && .venv/bin/python /tmp/trace_srv.py'
+
+**判据**：正常站点必须出现 fetch 阶段（通常还有 render）；只有 `resolve > discover` 且耗时
+不到 2 秒 = 发现逻辑没跑（2026-11-12 就是缩进错误导致全站 found=0，半天才发现）。
+
+前端同理：改完 build + 截图，别只信 npm run build 的退出码。
+
 ## 6. 审查清单（Reviewer 必查）
 
 1. **正确性**：随机抽 10 个结果，标签与原文证据是否真的对应？有没有断章取义？

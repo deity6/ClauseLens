@@ -378,3 +378,55 @@ XFF 伪造、快照路径穿越，含 tcpdump 验证）。
 
 `ANALYZE_HARD_LIMIT` 第一次没定义成功（替换锚点被前一次改动改掉了），服务起来后 SSE 直接抛
 `NameError`、整条流返回空——这类「改了但没生效」只能靠起完服务立刻打一次接口才发现。
+
+
+## 2026-11-12 上午 · 一个自己引入的严重 bug（已修）
+
+用户反馈「dnsneko / cloud.doulor.cn 明明有隐私条款，为什么查不到」。查下来是**上一轮改
+pipeline.py 时把整段发现逻辑误缩进进了 except net.FetchError 块**：
+
+```
+try:
+    home = net.fetch(...)
+except net.FetchError as _e:
+    ... (裸域/www 重试)
+    homepage_html = home.text                    ← 正常路径走不到
+    home_cands = discover.find_candidates(...)   ← 同上
+    ...
+except net.FetchError as e:                      ← 第二个 except，永远轮不到
+```
+
+后果：**只有首页抓取失败时才做发现**。抓取成功时直接跳过「找链接 → 探路径 → 渲染首页」，
+found=0，只剩 registry 快照能用。所以之前很多「成功」其实是预存快照撑着，清缓存后全露馅。
+
+判定方法：analyze() 的 stage 流只有 `resolve > discover` 且耗时 1.9 秒——正常站点发现阶段
+至少要有 find_candidates 的调用。
+
+修完（含三个连带问题）：
+
+| 站点 | 修前 | 修后 |
+|---|---|---|
+| dnsneko.com | not_found | C63 · 492 字（渲染首页找到 www.dnsneko.com/privacy） |
+| cloud.doulor.cn | not_found | C60 · 1,271 + 5,398 字（隐私 + 条款） |
+| ow.blizzard.cn | not_found | C61 · 8,084 + 2,270 字 |
+
+连带修的三处：
+
+1. **首页渲染阈值**：len(htext) < 400 → < 3000。ow.blizzard.cn 首页静态 545 字，
+   刚好超过门槛不渲染，而条款链接全在 JS 里。
+2. **补探遇到空壳**：probe_paths 探到 /privacy 但静态只回 12 字空壳时被判否丢弃，
+   而抓取阶段本来有渲染兜底。现在路径像条款 + 返回 200 就保留候选（正文可短至 5 字）。
+3. **同品牌跨 TLD**：paperpal.cn 的条款在 paperpal.com，被跨站过滤误杀。
+   加 brand_name() 按品牌名放行（ezg.com → Cloudflare 仍被拦）。
+
+### 覆盖率（清空缓存后真实抓取，77 次调用）
+
+| 口径 | 本轮前 | 本轮后 | 最初（含缓存） |
+|---|---|---|---|
+| 模糊 | 75.0% | 87.5%（35/40） | 80.0% |
+| 精确 | 86.5% | 86.5%（32/37） | 83.8% |
+
+### 教训
+
+改 pipeline / discover 之后，**必须立刻在服务器上跑一次 analyze() 并打印 stage 事件流**，
+而不是只看 systemctl is-active。这次如果早看一眼「1.9 秒 + found=0」就能当时发现。
