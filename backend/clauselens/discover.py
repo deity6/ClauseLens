@@ -130,9 +130,15 @@ def probe_paths(base: str, paths: list[str], tried: set[str] | None = None,
             # 必须先用 extract_text 剥掉脚本再判：SPA 页面前两万字全是 JS/CSS，
             # 直接拿原始 HTML 判「像不像条款」会一律判 false（小宇宙就是这么漏掉的）
             title, text = extract_text(page.text)
-            if not looks_like_policy(text):
-                continue
             url = futs[fut]
+            if not looks_like_policy(text):
+                # SPA 站的 /privacy 静态只回一个空壳（cloud.doulor.cn 是 12 字）。
+                # 在这里丢掉就等于「路径明明探对了，却因为对方用 JS 渲染而放弃」——
+                # 抓取阶段本来会对短内容触发渲染兜底，得先让它进得去（2026-11-12 用户反馈）。
+                if not (_URL_POLICY_HINT.search(urlparse(url).path or "") and len(text) >= 5):
+                    continue
+                out.append(Candidate(url, title or url, guess_doc_type(title, url, text), 6))
+                continue
             out.append(Candidate(url, title or url, guess_doc_type(title, url, text), 10))
     except Exception:
         pass
