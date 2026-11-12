@@ -241,27 +241,32 @@ def _analyze(raw: str, use_cache: bool, rr) -> "object":
         # 主站首页先翻一遍：registry 里可能收的是子域产品（如 baidu.com 收成了
         # 百度地图开放平台、百度手机卫士），命中 registry 就不翻首页会让用户查到别的产品
         try:
-            home = net.fetch(q.url, sess, total_timeout=min(net.TOTAL_TIMEOUT, _left(t_all, ANALYZE_BUDGET)))
-        except net.FetchError as _e:
-            # 裸域和 www 经常不是同一台服务器/同一张证书。实测踩过：
-            #   cosmoplat-aiot.com 裸域 TLS 失败，但 www.cosmoplat-aiot.com 有 13KB 的静态隐私政策；
-            #   appinn.net 裸域没有 A 记录，www 正常 200；
-            #   doulor.cn 裸域超时，cloud. 子域正常。
-            # 只凭裸域失败就判「没有条款」，是把「我们没找对门」说成了「对方没有」。
-            alt = _alt_host_url(q.url)
-            if alt and _left(t_all, ANALYZE_BUDGET) > 8:
-                yield "stage", {"stage": "resolve", "message": f"裸域打不开，换 {urlparse(alt).hostname} 再试一次"}
-                # 再失败就让外层 except 接住并记 fail_codes（不在这里吞掉）
-                home = net.fetch(alt, sess, total_timeout=min(net.TOTAL_TIMEOUT, _left(t_all, ANALYZE_BUDGET)))
-            else:
-                raise
+            try:
+                home = net.fetch(q.url, sess, total_timeout=min(net.TOTAL_TIMEOUT, _left(t_all, ANALYZE_BUDGET)))
+            except net.FetchError as _e:
+                # 裸域和 www 经常不是同一台服务器/同一张证书。实测踩过：
+                #   cosmoplat-aiot.com 裸域 TLS 失败，但 www.cosmoplat-aiot.com 有 13KB 的静态隐私政策；
+                #   appinn.net 裸域没有 A 记录，www 正常 200；doulor.cn 裸域超时，cloud. 子域正常。
+                # 只凭裸域失败就判「没有条款」，是把「我们没找对门」说成了「对方没有」。
+                alt = _alt_host_url(q.url)
+                if alt and _left(t_all, ANALYZE_BUDGET) > 8:
+                    yield "stage", {"stage": "resolve", "message": f"裸域打不开，换 {urlparse(alt).hostname} 再试一次"}
+                    home = net.fetch(alt, sess, total_timeout=min(net.TOTAL_TIMEOUT, _left(t_all, ANALYZE_BUDGET)))
+                else:
+                    raise _e
+            # ↓ 从这里开始是「首页拿到了」的正常路径。
+            #   注意：这几行必须在 try 内、except 外——之前误缩进到 except 里，
+            #   导致只有裸域失败时才做发现，正常路径直接 found=0（2026-11-12 用户反馈）。
             homepage_html = home.text
             homepage_url = home.url
             home_cands = discover.find_candidates(home.text, home.url, q.domain)
             if not home_cands:
                 _, htext = discover.extract_text(home.text)
-                # 首页正文短得离谱 = 服务端只给了空壳（纯前端路由站），渲染一次再找链接
-                if len(htext) < 400 and rb.take() and _left(t_all, ANALYZE_BUDGET) > 12:
+                # 首页**一个条款链接都没找到**时，渲染一次再找。原来的门槛是「正文 < 400 字」，
+                # 结果卡在中间地带：ow.blizzard.cn 首页静态正文 545 字（一段活动介绍），
+                # 刚好超过门槛不渲染，而它的条款链接全在 JS 里——于是 found=0。
+                # 既然走到这里就是「没别的线索了」，渲染一次总比直接放弃强；预算照旧受 rb 约束。
+                if len(htext) < 3000 and rb.take() and _left(t_all, ANALYZE_BUDGET) > 12:
                     rh = rr.render(home.url, timeout_ms=int(_left(t_all, ANALYZE_BUDGET) * 1000))
                     if rh is not None:
                         rtitle, rtext = discover.extract_text(rh.text)
@@ -269,7 +274,7 @@ def _analyze(raw: str, use_cache: bool, rr) -> "object":
                             homepage_html = rh.text
                             home_cands = discover.find_candidates(rh.text, home.url, q.domain)
                             yield "stage", {"stage": "discover",
-                                            "message": f"这个站的正文要跑脚本才有，已渲染首页（{len(rtext)} 字）"}
+                                            "message": f"这个站的正文要跑脚本才有，已渲染首页（{len(rtext)} 字，发现 {len(home_cands)} 条）"}
             docs_to_fetch += [(c.url, c.title, c.doc_type, 0) for c in home_cands]
         except net.FetchError as e:
             fail_codes.append(e.code)
