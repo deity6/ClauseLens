@@ -220,6 +220,16 @@ def looks_like_error_page(text: str) -> bool:
     return len(text) < 2500      # 真条款动辄几千字，前 600 字里出现这些词的多半是错误页
 
 
+def brand_name(host: str) -> str:
+    """主域的第一段：`paperpal.cn` 与 `paperpal.com` 都归 `paperpal`。
+
+    同一家公司常按地区分 TLD（.cn 是中文站、.com 是国际站），条款只挂在其中一个上。
+    实测：paperpal.cn 首页没有任何条款链接，它的隐私政策在 paperpal.com/privacy-policy
+    （2026-11-12 覆盖报告 s08）。
+    """
+    return base_domain(host).split(".")[0]
+
+
 def find_candidates(html: str, base_url: str, domain: str) -> list[Candidate]:
     soup = BeautifulSoup(html, "lxml")
     seen: dict[str, Candidate] = {}
@@ -232,7 +242,7 @@ def find_candidates(html: str, base_url: str, domain: str) -> list[Candidate]:
         # 只有同一主域（含其子域）的链接才采信。原来是「跨域只扣 3 分」，
         # 于是 ezg.com 的 Cloudflare 拦截页把 cloudflare.com/privacy 送成了它的条款。
         # taobao→alibaba 这类同集团跨域会因此丢掉——但宁可少一条，也不要贴错。
-        if base_domain(host) != base_domain(domain):
+        if base_domain(host) != base_domain(domain) and brand_name(host) != brand_name(domain):
             continue
         off = False
         text = " ".join(a.get_text(" ", strip=True).split())[:80] or a.get("title", "")
