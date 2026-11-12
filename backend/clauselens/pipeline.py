@@ -458,16 +458,18 @@ def _analyze(raw: str, use_cache: bool, rr) -> "object":
     # 结论站不住的时候要主动说，别让用户以为「0 个标签 = 这个网站很干净」
     warnings = []
     if len(full) < 2500:
-        warnings.append({"code": "thin_docs",
-                         "message_zh": f"只读到 {len(full)} 字的条款，内容太少，等级和标签都不可靠——"
-                                       "可能是这个站把条款放在 App 里或登录后才给看。"})
+        # 原来的说法是「内容太少，等级和标签都不可靠」，读起来像在指控用户或网站。
+        # 实际情况多半只是：条款确实写得简短，或者有一份在我们的路径之外。改成描述而非评判。
+        warnings.append({"code": "thin_docs", "severity": "info",
+                         "message_zh": f"这次读到 {len(full)} 字的条款。条款本身可能就是这么短，"
+                                       "也可能还有一份没被我们发现——结论按读到的内容算。"})
     if not hits:
-        warnings.append({"code": "no_tags",
-                         "message_zh": "没在条款里认出任何值得提醒的点。多半是抓到的页面太短或不是隐私政策/用户协议，"
-                                       "不代表这个网站没问题。"})
+        warnings.append({"code": "no_tags", "severity": "info",
+                         "message_zh": "读到的文本里没有出现值得提醒的条款。可能是这份文档写得很干净，"
+                                       "也可能是内容太短、没覆盖到关键部分。"})
     elif sum(1 for h in hits if not h.provisional) < 2:
-        warnings.append({"code": "few_tags",
-                         "message_zh": "只认出很少的条款要点，等级参考价值有限。"})
+        warnings.append({"code": "few_tags", "severity": "info",
+                         "message_zh": "认出的条款要点不多，等级只作参考。"})
 
     res = {
         "query": q.to_dict(),

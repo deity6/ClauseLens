@@ -138,7 +138,7 @@ export default function Radar({ dims, dimMeta, tagsByDim, grades }) {
             style={{ transformOrigin: `${C}px ${C}px` }}
             initial={reduce ? { opacity: 0 } : { scale: 0, opacity: 0 }}
             whileInView={{ scale: 1, opacity: 1 }}
-            viewport={{ once: true, amount: 0.5 }}
+            viewport={{ once: true, amount: 0.05 }}   // 0.5 太严：手机上雷达图只露出一角时永远不触发
             transition={{ duration: DUR.enter + 0.3, ease: EASE.spring, opacity: { duration: DUR.state } }}
           >
             <polygon className="radar__area" points={poly} />
@@ -211,11 +211,12 @@ export default function Radar({ dims, dimMeta, tagsByDim, grades }) {
             <li key={d} className={`dimbar ${hover === d ? "is-on" : ""}`} onMouseEnter={() => showTip(d)} onMouseLeave={hideTip}>
               <span className="dimbar__name">{dimMeta[d]?.name_zh}</span>
               <span className="dimbar__track">
+                {/* 用 animate 而不是 whileInView：手机上这几条在首屏下方，
+                    永远不进视口 → whileInView 不触发 → scaleX 一直 0，条是空的。 */}
                 <motion.span
                   className={`dimbar__fill bg-${g}`}
                   initial={{ scaleX: reduce ? 1 : 0 }}
-                  whileInView={{ scaleX: (dims[d] ?? 0) / 100 }}
-                  viewport={{ once: true }}
+                  animate={{ scaleX: (dims[d] ?? 0) / 100 }}
                   transition={{ duration: 0.9, delay: 0.1 + i * 0.06, ease: EASE.tail }}
                 />
               </span>

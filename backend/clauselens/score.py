@@ -13,7 +13,13 @@ from .taxonomy import DIMENSIONS, TAG_BY_ID, grade_for
 
 PARAMS_PATH = Path(__file__).resolve().parents[2] / "data" / "models" / "score_params.json"
 
-DEFAULT = {"base": 72.0, "k_bad": 3.2, "k_good": 1.6, "neutral": 0.4,
+# 2026-11-12 重做（用户反馈「全是低分，六维封顶 72，总分没见过 70 以上」）：
+#   base 72 → 82：没找到问题不等于有问题。以前「零标签」直接落到 72，再经 learn 模型
+#     插值成 65 分（C 级），一个 ToS;DR 评 A 的站被我们判成「中等偏下」。
+#   k_bad 3.2 → 2.0：负面标签的累积效应太强，四份文档命中十几条就掉到 20 分以下。
+#   k_good 1.6 → 2.8：正面标签原来只能拉回负面的一半，明明有「可以删除数据」「不卖数据」
+#     这类条款也体现不出差距——结果所有站挤在中低分段，失去了「区分」的意义。
+DEFAULT = {"base": 82.0, "k_bad": 2.0, "k_good": 2.8, "neutral": 0.4,
            "dim_weights": {"privacy": 1.2, "sharing": 1.2, "rights": 1.0, "control": 1.0, "liability": 0.9, "content": 0.7}}
 
 
@@ -61,12 +67,17 @@ def score(tags: list[tuple[str, float]], params: dict | None = None) -> dict:
         else:
             dims[t.dimension] -= t.weight * conf * base["neutral"]
     dims = {d: max(0.0, min(100.0, v)) for d, v in dims.items()}
-    if p.get("mode") == "learned":
+    w = base["dim_weights"]
+    dim_total = sum(dims[d] * w[d] for d in dims) / sum(w[d] for d in dims)
+    if p.get("mode") == "learned" and p.get("anchors_raw"):
+        # 混合：以我们自己的六维为主（0.7），ToS;DR 学到的惩罚只作参考（0.3）。
+        # 原来 100% 用 learned，等于把自己那套「六维」变成纯装饰；而且 Anchors 的零点
+        # 落在 64.7 分，任何「没发现明显问题」的站都会被压成 C。
         raw = p.get("intercept", 0.0) + sum(p["penalty"].get(tid, 0.0) * c for tid, c in best.items())
-        total = _interp(raw, p["anchors_raw"], p["anchors_disp"])
+        learned = _interp(raw, p["anchors_raw"], p["anchors_disp"])
+        total = 0.7 * dim_total + 0.3 * learned
     else:
-        w = base["dim_weights"]
-        total = sum(dims[d] * w[d] for d in dims) / sum(w[d] for d in dims)
+        total = dim_total
     total = max(0.0, min(100.0, total))
     g = grade_for(total)
     if blocker and g in "ABC":
