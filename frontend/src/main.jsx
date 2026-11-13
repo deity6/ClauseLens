@@ -12,10 +12,23 @@ import "lxgw-wenkai-webfont/lxgwwenkai-bold.css";
 import "@fontsource/instrument-serif/latin-400.css";
 import "@fontsource/space-mono/latin-400.css";
 import "@fontsource/space-mono/latin-700.css";
+// 主题 B 的正文/标题字体：SOFT LAB 与 lm-detector 用的都是 grotesque（Inter / Geist），
+// 中文交回系统黑体（PingFang / 雅黑），不额外拉中文字体包。
+import "@fontsource-variable/inter/wght.css";
 
 import "./patterns.css";
 import "./styles.css";
 import "./tldr-means.css";
+// 主题 B（点阵）的两层：基础层 + 组件皮肤层。全部规则挂在 [data-theme="geek"] 下，
+// 浅色主题不受影响；因为体积不大且切换要即时，直接静态引入（不做按需加载）。
+import "./theme-geek.css";
+import "./theme-geek-components.css";
+
+import { applyTheme, getTheme } from "./lib/theme.js";
+
+// 主题：index.html 里的内联脚本已经在首帧前写过一次 data-theme（防闪白），
+// 这里再走一遍统一入口，把 color-scheme 与 <meta theme-color> 一并对齐。
+applyTheme(getTheme(), { persist: false });
 
 // 底纹随时可切：?pattern=iris（见 patterns.css 顶部清单）
 const _pat = new URLSearchParams(location.search).get("pattern");

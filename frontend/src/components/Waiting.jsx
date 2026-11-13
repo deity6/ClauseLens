@@ -5,6 +5,7 @@ import { DOC_TYPE_ZH, fmtChars, fmtMinutes } from "../lib/format.js";
 import { DUR, EASE } from "../lib/motion.js";
 import { POLARITY } from "../lib/taxonomy.js";
 import CountUp from "./CountUp.jsx";
+import ScanDoc from "./ScanDoc.jsx";
 import { IconDoc, PolarityIcon } from "./Icons.jsx";
 
 // 文案池按轨道阶段切换；{n}/{m}/{f} 由真实事件数据填入，拿不到就跳过含占位的句子
@@ -52,9 +53,17 @@ const ERRORS = {
   default: { title: "这次没能读到条款", tips: [PASTE_TIP, "稍后再试一次"] },
 };
 
-const LINES = 15;
-// 纸上的“文字行”宽度：固定伪随机，避免每次渲染跳动
-const lineWidths = Array.from({ length: LINES }, (_, i) => 52 + ((i * 47) % 44));
+// 纸面左下角的扫描读数：后端只在 analyze 阶段给 0–1 的 progress，
+// 其余阶段用「已到的阶段 + 已发现的文档 / 标签数」拼一个单调递增的百分比——
+// 全部是真实事件里的数字，不是随机数；拿不到就给该阶段的下限。
+function scanPercent(state, railKey) {
+  const docs = state.docs.length;
+  const p = typeof state.progress === "number" ? state.progress : 0;
+  if (railKey === "find") return 4 + Math.min(docs, 3);
+  if (railKey === "dig") return 10 + Math.min(docs, 4) * 10; // 10 → 50
+  if (railKey === "read") return 52 + Math.round(p * 36); // 52 → 88
+  return Math.min(99, 88 + Math.round((Math.min(state.tags.length, 30) / 30) * 11)); // 盖章 88 → 99
+}
 
 export default function Waiting({ query, state, taxonomy, onCancel, onRetry, onHome }) {
   const reduce = useReducedMotion();
@@ -143,32 +152,13 @@ export default function Waiting({ query, state, taxonomy, onCancel, onRetry, onH
       </p>
 
       <div className="waiting__stage">
-        <motion.div
-          className={`paper ${scanning ? "paper--scanning" : ""}`}
-          initial={reduce ? { opacity: 0 } : { y: 120, opacity: 0, rotate: 2 }}
-          animate={{ y: 0, opacity: 1, rotate: -1.2 }}
-          transition={{ duration: DUR.enter + 0.2, ease: EASE.enter }}
-          aria-hidden="true"
-        >
-          <div className="paper__head">
-            <span className="paper__title">{state.docs.at(-1)?.title || "服务条款"}</span>
-            <span className="meta">{state.docs.length ? `DOC ${String(state.docs.length).padStart(2, "0")}` : "DOC —"}</span>
-          </div>
-          <div className="paper__lines">
-            {lineWidths.map((w, i) => (
-              <span key={i} className="paper__line" style={{ width: `${w}%`, "--i": i }} />
-            ))}
-          </div>
-          {scanning && <div className="paper__scan" />}
-          {railKey === "stamp" && (
-            <motion.div
-              className="paper__stampghost"
-              initial={reduce ? { opacity: 0 } : { scale: 1.4, opacity: 0, rotate: -20 }}
-              animate={{ scale: 1, opacity: 0.85, rotate: -8 }}
-              transition={{ duration: DUR.stamp, ease: EASE.spring }}
-            />
-          )}
-        </motion.div>
+        <ScanDoc
+          title={state.docs.at(-1)?.title || "服务条款"}
+          docs={state.docs}
+          percent={scanPercent(state, railKey)}
+          scanning={scanning}
+          stamp={railKey === "stamp"}
+        />
 
         <div className="waiting__side">
         <div className="quip">

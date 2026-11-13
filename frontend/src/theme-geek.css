@@ -1,0 +1,331 @@
+/* 主题 B · 「Quiet Dark / Pure B&W」—— 基础层
+   ─────────────────────────────────────────────────────────────
+   配色只有黑、白、灰：底 #000、字 #fff、三级灰、1px 白 10% 发丝线、一个白色的“强调”。
+   来源与语法照抄（不自己发挥）：
+     · 纯黑白、发丝线、胶囊按钮、分段控件、面板 → bencho.dev
+     · 三级文字/圆角/缓动/卡片 hover → SOFT LAB（doit.loc.cc，github.com/deity6/softlab）
+     · 点阵背景（顶部一条带，不铺满） → bencho `hero-dots` + `.canvas-root` 的写法
+     · ASCII 点阵场（评分徽章 / 页脚山脊） → ascii.txt 的 ASCIIWake（MIT，bencho.dev/licence）
+   所有规则挂在 [data-theme="geek"] 下；浅色主题零改动。 */
+
+[data-theme="geek"] {
+  --paper: #000000;
+  --paper-2: #0a0a0a;
+  --paper-3: #121212;
+  --sheet: #161616;
+  --ink: #ffffff;
+  --ink-2: #b4b4b4;
+  --ink-3: #7c7c7c;
+  --ink-rgb: 255, 255, 255;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-2: rgba(255, 255, 255, 0.26);
+
+  /* 没有彩色强调：强调就是纯白；焦点、选中、按钮全走明度差 */
+  --accent: #ffffff;
+  --accent-soft: #d6d6d6;
+  --accent-wash: rgba(255, 255, 255, 0.12);
+
+  --dot: rgba(255, 255, 255, 0.2);
+  --dot-hi: rgba(255, 255, 255, 0.85);
+  --glow: rgba(255, 255, 255, 0.06);
+  --beam: #ffffff;
+  --warm-rgb: 255, 255, 255;
+
+  /* 语义色也归到灰阶：等级 A–E 由暗到亮，好坏由图标与描边区分（颜色只用来分强弱，不再分色相） */
+  --good: #d8d8d8;
+  --good-tint: rgba(255, 255, 255, 0.07);
+  --good-ink: #f0f0f0;
+  --warn: #c4c4c4;
+  --warn-tint: rgba(255, 255, 255, 0.07);
+  --warn-ink: #e4e4e4;
+  --bad: #ffffff;
+  --bad-tint: rgba(255, 255, 255, 0.1);
+  --bad-ink: #ffffff;
+  --neutral: #8e8e8e;
+  --neutral-tint: rgba(255, 255, 255, 0.05);
+  --neutral-ink: #c8c8c8;
+
+  --g-A: #8e8e8e;
+  --g-B: #aaaaaa;
+  --g-C: #c8c8c8;
+  --g-D: #e6e6e6;
+  --g-E: #ffffff;
+
+  --mark: rgba(255, 255, 255, 0.14);
+  --scan: rgba(255, 255, 255, 0.16);
+  --sh-1: none;
+  --sh-2: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --sh-3: 0 24px 64px rgba(0, 0, 0, 0.6);
+
+  --display: "Inter Variable", "Inter", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --sans: "Inter Variable", "Inter", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --serif: var(--sans);
+  --num: var(--sans);
+  --mono: "Space Mono", "JetBrains Mono", "Noto Sans SC", ui-monospace, monospace;
+
+  --r: 12px;
+  --r-lg: 18px;
+  --e-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --e-enter: cubic-bezier(0.22, 1, 0.36, 1);
+  --e-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --e-tail: cubic-bezier(0.22, 0.61, 0.12, 1);
+  --t-micro: 160ms;
+  --t-state: 260ms;
+  --t-enter: 420ms;
+  color-scheme: dark;
+}
+
+/* ── 1 背景：顶部一段点阵 + 顶部一层冷白辉光，其余是纯黑 ──────────────
+   纸主题的格子/花环/噪点/水印全关。点阵只有 canvas 这一层（之前叠了两层），
+   而且只铺顶部一条带（高度 = 640px，底部渐隐），不铺满整页。 */
+[data-theme="geek"] body::before,
+[data-theme="geek"] body::after {
+  display: none;
+}
+html[data-theme="geek"]::after {
+  display: none;
+}
+html[data-theme="geek"]::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 760px;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(900px 420px at 50% 0%, rgba(255, 255, 255, 0.1), transparent 70%);
+}
+[data-theme="geek"] body {
+  background: var(--paper);
+}
+
+.dotsbackdrop {
+  position: fixed;
+  top: 0;
+  left: -20px;
+  width: calc(100% + 40px);
+  height: 640px;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.95;
+  mask-image: linear-gradient(#000 0%, #000 46%, transparent 100%);
+  -webkit-mask-image: linear-gradient(#000 0%, #000 46%, transparent 100%);
+  animation: dots-in 700ms var(--e-out) both;
+}
+@keyframes dots-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ── 2 基础文字 ───────────────────────────────────────────────── */
+[data-theme="geek"] body {
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.62;
+  letter-spacing: -0.006em;
+}
+[data-theme="geek"] h1,
+[data-theme="geek"] h2,
+[data-theme="geek"] h3,
+[data-theme="geek"] h4 {
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+[data-theme="geek"] .meta {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+[data-theme="geek"] code {
+  font-family: var(--mono);
+  background: var(--paper-3);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.1em 0.35em;
+  font-size: 0.88em;
+}
+[data-theme="geek"] ::selection {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+[data-theme="geek"] :focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+[data-theme="geek"] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+[data-theme="geek"] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+[data-theme="geek"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border: 3px solid #000;
+  border-radius: 999px;
+}
+[data-theme="geek"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+[data-theme="geek"] {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-width: thin;
+}
+
+/* ── 3 外壳 ──────────────────────────────────────────────────── */
+[data-theme="geek"] .topbar {
+  border-bottom: 1px solid var(--line);
+  padding-top: 18px;
+  padding-bottom: 16px;
+}
+[data-theme="geek"] .brand svg {
+  color: #fff;
+}
+[data-theme="geek"] .brand__zh {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+[data-theme="geek"] .brand__en {
+  color: var(--ink-3);
+}
+[data-theme="geek"] .disclaimer {
+  border-top: 1px solid var(--line);
+  position: relative;
+  z-index: 1;
+}
+[data-theme="geek"] .topbar__demo {
+  color: var(--ink-3);
+}
+
+/* ── 4 主题开关 ───────────────────────────────────────────────────
+   开关本体在 components/LiquidToggle.*（Bencho 的液态开关，MIT）；这里只留它在顶栏里的位置。
+   旧的 .tswitch 分段控件已废弃，样式一并删掉，免得和组件里的类名打架。 */
+.topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+@media (max-width: 720px) {
+  .topbar__demo {
+    display: none;
+  }
+}
+
+}
+
+/* ── 5 转场遮罩 + 内容浮现（像素落幕，lm-detector 的 bayer4/blocks） ── */
+.theme-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.cl-sweep {
+  animation: cl-sweep-in 420ms var(--e-enter, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: calc(var(--sweep-d, 0) * 1ms);
+}
+@keyframes cl-sweep-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── 6 ASCII 点阵场（评分徽章 / 页脚山脊） ──────────────────────────
+   .asc 是 ascii.txt 里那个组件的宿主；画布铺满宿主，颜色吃 --ink（白）。
+   交互：hover 画一道唤醒，拖过的地方字符变密，松手按 trail 冷却；点击放一圈涟漪。 */
+.asc {
+  position: relative;
+  cursor: crosshair;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  width: 100%;
+  height: 100%;
+}
+.asc-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: var(--ink); /* 原组件读的是 --fill-on / --ink，这里直接给画布上色，不引新全局 */
+}
+
+/* 评分徽章：一块点阵屏，下面一行 GRADE */
+.scorebadge {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 148px;
+  height: 148px;
+  justify-content: flex-end;
+}
+.scorebadge__field {
+  flex: 1;
+  min-height: 0;
+  color: var(--ink);
+}
+.scorebadge__cap {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.scorebadge__cap b {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+/* 页脚山脊：bencho `.foot-field` 的写法 —— 贴在页面最底部，颜色压到 22% 墨；
+   .shell 留出一条带的高度，页脚文字落在它上面。 */
+[data-theme="geek"] .shell {
+  padding-bottom: 156px;
+}
+.ridgefoot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 156px;
+  color: color-mix(in srgb, var(--ink) 26%, var(--paper));
+  pointer-events: auto;
+}
+.ridgefoot__field {
+  color: inherit;
+}
+/* 画布默认吃 --ink（白），山脊要压到墨的 22%，像印在纸上的灰点 */
+.ridgefoot .asc-canvas {
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dotsbackdrop {
+    animation: none;
+  }
+  .cl-sweep {
+    animation: none;
+  }
+  .asc {
+    cursor: default;
+  }
+}

@@ -4,6 +4,7 @@ import { DUR, EASE } from "../lib/motion.js";
 import { POLARITY } from "../lib/taxonomy.js";
 import { fmtChars } from "../lib/format.js";
 import { IconChevron } from "./Icons.jsx";
+import GlassLens from "./GlassLens.jsx";
 
 // 展开/收起的动画时长（只属于开合）。滑动是另一套：页面平滑滚动自己的时长，两件事不共用一个 duration。
 const OPEN_MS = 640; // 面板高度动画时长（毫秒）。比原来 320 慢一倍，展开像「卷轴慢慢摊开」
@@ -44,6 +45,8 @@ function topGap() {
 }
 
 // 把一份原文切成「普通 / 证据」片段。重叠的证据合并，保留第一个命中标签的极性作配色。
+// 每个片段顺手带上标签的 id 与 explain_zh：透镜命中时要把那句「翻译」成大白话
+// （explain_zh），读的是 DOM 上的 data-explain，不用再回查一遍 tags。
 function segment(text, spans) {
   const sorted = [...spans].sort((a, b) => a.start - b.start);
   const merged = [];
@@ -52,7 +55,9 @@ function segment(text, spans) {
     if (last && s.start <= last.end) {
       last.end = Math.max(last.end, s.end);
       last.tags.push(...s.tags);
-    } else merged.push({ ...s, tags: [...s.tags] });
+      last.ids.push(...s.ids);
+      last.explain = last.explain || s.explain; // 一句里压了几条标签时，用第一条有解释的
+    } else merged.push({ ...s, tags: [...s.tags], ids: [...s.ids] });
   }
   const out = [];
   let at = 0;
@@ -82,10 +87,19 @@ export default function Reader({ docs, texts, tags, taxonomy, focus, open, setOp
   const spans = useMemo(() => {
     const by = {};
     for (const t of tags) {
-      const pol = taxonomy.byId[t.id]?.polarity || "neutral";
-      for (const e of t.evidence || []) (by[e.doc] ||= []).push({ start: e.start, end: e.end, cls: POLARITY[pol]?.cls, tags: [taxonomy.byId[t.id]?.name_zh || t.id] });
+      const meta = taxonomy.byId[t.id];
+      const pol = meta?.polarity || "neutral";
+      for (const e of t.evidence || [])
+        (by[e.doc] ||= []).push({
+          start: e.start,
+          end: e.end,
+          cls: POLARITY[pol]?.cls,
+          tags: [meta?.name_zh || t.id],
+          ids: [t.id],
+          explain: meta?.explain_zh || "", // 给透镜的「翻译」用：一句话说清这条对你的影响
+        });
     }
-    if (focus) (by[focus.doc] ||= []).push({ start: focus.start, end: focus.end, cls: "focus", tags: [] });
+    if (focus) (by[focus.doc] ||= []).push({ start: focus.start, end: focus.end, cls: "focus", tags: [], ids: [], explain: "" });
     return by;
   }, [tags, taxonomy, focus]);
 
@@ -281,7 +295,13 @@ export default function Reader({ docs, texts, tags, taxonomy, focus, open, setOp
             <div className="reader__body" ref={bodyRef} tabIndex={0} role="tabpanel" aria-label={doc?.title}>
               {segs.map((s, i) =>
                 s.mark ? (
-                  <mark key={i} data-s={s.mark.start} className={`hl hl--${s.mark.cls} ${isTarget(s.mark) ? "is-target" : ""}`} title={s.mark.tags.join("、")}>
+                  <mark
+                    key={i}
+                    data-s={s.mark.start}
+                    data-explain={s.mark.explain || undefined}
+                    className={`hl hl--${s.mark.cls} ${isTarget(s.mark) ? "is-target" : ""}`}
+                    title={s.mark.tags.join("、")}
+                  >
                     {s.text}
                   </mark>
                 ) : (
@@ -293,6 +313,9 @@ export default function Reader({ docs, texts, tags, taxonomy, focus, open, setOp
           </motion.div>
         )}
       </AnimatePresence>
+      {/* 玻璃透镜：挂在 body 级的定位层上（portal），所以面板收起也还在，位置写在 localStorage。
+          能拖到面板外，也能拖回正文上放大——见 GlassLens.jsx 顶部注释。 */}
+      <GlassLens anchorRef={rootRef} bodyRef={bodyRef} contentKey={active} />
     </div>
   );
 }

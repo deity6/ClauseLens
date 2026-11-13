@@ -1,0 +1,259 @@
+/* BENCHO · Liquid toggle —— 样式原样搬过来（MIT，bencho.dev/licence）。
+   规则与注释一字未删；改动都集中在本文件末尾「接入本站」那一段，以及 `.liq-well`
+   里新增的 token 定义。 */
+
+/* ── the rest of them ────────────────────────────────────────
+   Not every block has a ::before to hang a border on, and
+   giving each one a pseudo-element it does not otherwise need
+   is a lot of stylesheet for a hairline. A 1px spread shadow
+   is the same mark by another means — the create menu has
+   used exactly this since it was written, for exactly this
+   reason — and it composites without touching layout.
+
+   This is what makes Stroke honest on every entry rather than
+   on the dozen that happened to be built on a glass pane. */
+/* 本站没有 Stroke 控件，也没有 .bal / .bar-rail / .fan-core / .step-pill /
+   .deck-card / .tick-row / .nod-card 这些元件——这组选择器在这儿不会命中任何东西。
+   留着的理由有两个：它解释了 --pane-edge / --nod-r 这两个 token 是干什么用的
+   （下面 .liq-well 里映射了它们），以及那条 1px 展开阴影的写法后来被本文件
+   末尾的「发丝线」直接借用了。 */
+[data-stroke="on"] .bal,
+[data-stroke="on"] .bar-rail,
+[data-stroke="on"] .fan-core,
+[data-stroke="on"] .step-pill,
+[data-stroke="on"] .liq-sw,
+[data-stroke="on"] .deck-card,
+[data-stroke="on"] .tick-row,
+/* NOT the rows. Stroke is a question about the block's own
+   edge, and hanging it on every row inside drew four
+   hairlines in the middle of a panel that still had none
+   round it. `.lab` already carries the ::before this control
+   was built for, and the roster's box is a .lab. */
+
+/* ── a ring on a metaball ────────────────────────────────────
+   The reorder list's rows are blobs on a filtered layer, and a
+   spread shadow drawn there does not survive: the blur smears
+   it and the alpha row then crushes what is left to nothing,
+   so Stroke appeared to do nothing on this block in either
+   theme.
+
+   The ring goes on the UNFILTERED twin instead. Every row is
+   drawn twice — a blob that merges and an ink layer above it
+   that carries the avatar and the name — and the two share
+   their geometry exactly, so an outline on the top one traces
+   the shape of the bottom one for free. */
+/* ── and the node card ─────────────────────────────────────
+   It drew its hairline unconditionally for a revision, which
+   is the one thing a block with a Stroke control must not do:
+   the control then reads as broken in the Off position,
+   because the edge it promises to remove is still there. The
+   ring follows the card's own corner, which is a knob. */
+[data-stroke="on"] .nod-card {
+  box-shadow: 0 0 0 1px var(--pane-edge);
+  border-radius: var(--nod-r, 20px);}
+
+/* ════ liquid ═══════════════════════════════════════════════
+   Three studies in one filter. Prefix liq-.
+
+   Every one of these is two layers in register: opaque shapes
+   on a layer carrying url(#liq-goo), and anything that needs
+   a crisp edge — text, a hit area — riding above on a layer
+   that carries no filter at all. The goo eats translucency
+   and mangles glyphs, so nothing else can share the layer. */
+
+/* ── 1 · liquid toggle ───────────────────────────────────── */
+.liq-well {
+  /* ── Bencho 的设计 token（这一节就是 toggle.txt 第 4 节要判断的部分）
+     下面那些规则读 --fill-on / --fill-slab / --card / --board / --pane-edge /
+     --ink / --nod-r，而原文件从不定义它们。全部落到本站已有的变量上，
+     并且只在组件自己的根上定义：不进 :root，也不会漏到别的元件。
+
+     两套主题（html[data-theme="light"|"geek"]，见 styles.css / theme-geek.css）
+     都定义了 --ink / --paper / --paper-2 / --line，所以开关自己就会跟着主题反转：
+       light 下 --paper 是白、--ink 是近黑 → OFF 是白轨道 + 灰水滴；
+       geek  下 --paper 是黑、--ink 是白 → ON 是白轨道 + 黑水滴。
+     这正是想要的：开关不需要一条 [data-theme] 规则来知道自己在哪个主题里。
+
+     `--ink` 这一行是唯一一处不能照抄字面的地方：原样写 `--ink: var(--ink)` 在 Chromium 里
+     是「同名自引用」→ 按自定义属性的循环规则，它的计算值变成 guaranteed-invalid（实测
+     getPropertyValue('--ink') 返回空串），而不是回落到继承值。连带的后果很隐蔽：
+     `--fill-on: var(--ink)` 跟着空 → `.liq-sw[data-on="true"]` 的 background 整条声明
+     在计算值阶段失效 → 轨道变透明；水滴的 color-mix 也失效 → OFF 态的水滴整个不见。
+     所以这里写成 CSS 级关键字 `inherit`：同一个意思（取 :root 上那个 --ink），
+     但值是真的有值，主题换了它也跟着换。 */
+  --fill-on: var(--ink);      /* 开启态：轨道 = 主墨色 */
+  --fill-slab: var(--paper);  /* 关闭态：轨道 = 纸色 */
+  --card: var(--paper-2);
+  --board: var(--paper);
+  --pane-edge: var(--line);
+  --ink: inherit;
+  --nod-r: 12px;
+  width: 240px; height: 130px;
+  display: grid; place-items: center;}
+
+/* ── BLACK AND WHITE, AND NO EDGE OF ITS OWN ────────────────
+   The on state was a green wash with a green ring, which made
+   this the only block on the bench asserting a colour nothing
+   else uses — and a switch does not need a hue to say it is
+   on. It inverts instead: a light track with a dark thumb
+   becomes a dark track with a light one, which is the strongest
+   thing two colours can say and the only thing this component
+   has to say.
+
+   `--fill-on` / `--fill-slab` rather than --ink / --board, so
+   the pair follows the Fill control the entry declares instead
+   of naming a colour twice.
+
+   And no inset ring. It carried one unconditionally, which is
+   an edge the Stroke switch cannot take away — the same bug
+   the sleep pill, the command bar and the Notify pill all had.
+   Stroke's own rule is a few hundred lines up. */
+.liq-sw {
+  position: relative;
+  width: 92px; height: 46px;
+  padding: 0; border: 0;
+  /* ── ALWAYS A PILL ────────────────────────────────────────
+     It took a Corner knob for a while and does not any more.
+     A switch is a pill: that is the shape the gesture is named
+     after, and squaring it turns a thing you slide into a
+     thing you click. The droplet inside followed the knob too,
+     concentrically, and the same argument applies twice over —
+     one number that could only ever make the component less
+     like itself. */
+  border-radius: 999px;
+  /* ── OFF IS THE SLAB, NOT A GREY ─────────────────────────
+     The two states are the two ends of the fill's own ramp,
+     and OFF is the light end of it: the track is the slab —
+     white on a light fill, near-black on a dark one — and the
+     dot is a grey mixed toward it. ON is the inversion, ink
+     track and slab dot, which is what it always was.
+
+     Read across the pair, the TRACK carries the state and the
+     dot is along for the ride. It was the other way round:
+     the off track was a 12% wash and the dot was full ink, so
+     the loud half of the switch was the part that only moves.
+
+     It reads because the card behind is not white — the stage
+     is the board's own grey, so a white pill on it is an
+     object. Stroke's hairline is there for anywhere it is
+     not. */
+  background: var(--fill-slab, var(--card));
+  cursor: pointer;
+  /* it is a rail you can push along, not only a button */
+  touch-action: none;
+  transition: background 420ms ease;}
+
+.liq-sw[data-on="true"] { background: var(--fill-on, var(--ink)); }
+
+.liq-sw-blobs {
+  position: absolute; inset: 0;}
+
+/* opaque on purpose: a goo filter over a translucent fill
+   thresholds the alpha away and the shape disappears */
+/* left: 0 is not optional. These are inline elements, so with
+   left: auto the static position is wherever the line box put
+   them — and the button they sit in centres its text, which
+   pushed both blobs to the middle of the track and the thumb
+   clean off the end of it. */
+/* ── the droplet, and it is the ONLY body ───────────────────
+   There was a second, smaller blob running behind it on a
+   lagging spring; the goo between them necked into a thread,
+   which is what a trail is and what it looks like. It is one
+   body that stretches now — see the note in Liquid.tsx, and
+   the dragging ball's, which lost the same thing first.
+
+   `left: 0` is not optional. It is an inline element, so with
+   `left: auto` the static position is wherever the line box
+   put it — and the button it sits in centres its text, which
+   pushed the thumb to the middle of the track.
+
+   OPAQUE on purpose: a goo filter over a translucent fill
+   thresholds the alpha away and the shape disappears. Which
+   is why the grey is a `color-mix` and not an alpha — see the
+   note where the off colour is chosen. */
+.liq-thumb {
+  position: absolute;
+  left: 0; top: 50%;
+  /* the size comes from Liquid.tsx, which also needs it for the
+     travel — one number, so the circle and the distance it
+     crosses cannot disagree */
+  width: var(--liq-thumb, 36px); height: var(--liq-thumb, 36px);
+  margin-top: calc(var(--liq-thumb, 36px) / -2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fill-on, var(--ink)) 19%, var(--fill-slab, var(--card)));
+  /* transform is Framer's — a CSS transition on the same
+     property re-interpolates every frame the spring writes,
+     and what you see is the easing, not the spring. The colour
+     is the only thing here that eases, and it is the only one
+     that can: everything else about this element is written
+     into one transform by Framer. */
+  transition: background 420ms ease;}
+
+/* ON inverts the pair: ink track, slab droplet. The two states
+   are the two ends of the fill's ramp and never two values of
+   the same one. */
+.liq-sw[data-on="true"] .liq-thumb { background: var(--fill-slab, var(--board)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .liq-thumb, .liq-pill, .liq-bead { transition-duration: 160ms; }
+}
+
+/* ════ 接入本站（以下是本站加的，不属于 Bencho 原样式表）═════════
+   三件事：① 按 0.62 缩到顶栏尺寸；② 轨道里的两枚图标；③ 那条发丝线。 */
+
+/* ── ① 缩小：92×46 → ~57×28 ────────────────────────────────
+   transform 不改布局盒，所以外层 .liq-scale 直接按 0.62 把盒子折小
+   （92×0.62 ≈ 57，46×0.62 ≈ 28.5），内层 .liq-well 保持 92×46 再由
+   transform 缩下去 —— 不这么做，46px 的轨道会把顶栏顶高。
+
+   为什么不改 TRACK/THUMB 常量：那是几何，拖动距离、水滴直径、指针数学
+   全都读它；缩放是"呈现多大"，只该留在外层。组件里的 local() 用
+   getBoundingClientRect().width / offsetWidth 已经把系数除掉了。 */
+.liq-scale {
+  --liq-k: 0.62;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: calc(92px * var(--liq-k));
+  height: calc(46px * var(--liq-k));}
+.liq-scale > .liq-well {
+  /* 试验台的 240×130 在这里收成轨道的实尺寸（否则 .liq-scale 装的是 130px 的台子） */
+  width: 92px; height: 46px;
+  transform: scale(var(--liq-k));
+  transform-origin: 50% 50%;}
+
+/* ── ② 图标层：不带 goo 滤镜的那一层 ───────────────────────
+   两枚 16px 的内联 SVG（纸 / 点阵），左右各一，居中在轨道里。
+   层级：排在 .liq-sw-blobs 之后 = 画在它上面，所以永远不会被水滴吃掉
+   （带滤镜的那层会按 alpha 阈值把字形削没，这句在文件上半部分说过两次）。
+
+   位置不是随便留白的：拇指停稳时正好停在自己那一侧的图标上
+   （左停 x=5..41、右停 x=51..87，图标圆心取 23 / 69）——所以"当前状态"那枚
+   图标永远是被水滴托着的那一枚。颜色：活跃一侧 --paper，另一侧 --ink-3。
+
+   两种主题下活跃那枚的表现不一样，这是 --paper + 水滴底色的必然结果：
+     light（OFF，水滴是 19% 墨的灰）→ 白图标浮在灰水滴上，像被水滴刻出来的；
+     geek（ON，水滴是 --paper 的黑）→ 黑图标压在黑水滴上，整个融进去。
+   后一种在 1px 尺度上读起来就是"这枚图标属于水滴"，不影响开关本身的辨识；
+   如果希望它两边都清楚，把下面 `.liq-sw[data-on="true"] .liq-icons > .liq-ico:last-child`
+   那句的 `var(--paper)` 改成 `var(--ink-3)` 即可（一行）。 */
+.liq-icons {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;          /* 图标圆心落在 23 / 69：15 + 8 = 23，92 − 15 − 8 = 69 */
+  color: var(--ink-3);
+  pointer-events: none;     /* 拖拽/点击仍然落在 .liq-sw 上（指针数学按按钮算） */
+  transition: color 420ms ease;}
+.liq-ico { display: block; }
+.liq-sw[data-on="false"] .liq-icons > .liq-ico:first-child { color: var(--ink); }
+.liq-sw[data-on="true"] .liq-icons > .liq-ico:last-child { color: var(--ink); }
+
+/* ── ③ 发丝线：本站没有 Stroke 控件，所以那条 1px 展开阴影常开 ──────
+   原文件的理由是"卡片底色不是白的，白药丸在上面才是个东西"。本站的顶栏
+   底色就是 --paper，浅色主题下纸色轨道会整个消失在纸色页面上，只剩一颗水滴。
+   于是把 Stroke 提供的那条边常开（`--pane-edge` = `--line`，见 .liq-well）：
+   同一个 1px 展开阴影，不碰布局，也不加内嵌环（原注释说过内嵌环是 bug）。 */
+.liq-sw { box-shadow: 0 0 0 1px var(--pane-edge); }

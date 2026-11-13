@@ -146,8 +146,7 @@ export default function TagWall({ tags, taxonomy, docs, domain, summary, offline
         className={`tagrow ${isOpen ? "is-open" : ""}`}
         layout="position"
         initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.88, y: 6 }}
-        whileInView={{ opacity: 1, scale: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.2 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{
           layout: { duration: 0.42, ease: [0.22, 0.61, 0.36, 1] },
           duration: DUR.enter,

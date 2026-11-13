@@ -7,6 +7,10 @@ import Home from "./components/Home.jsx";
 import Waiting from "./components/Waiting.jsx";
 import Result from "./components/Result.jsx";
 import DevPanel from "./components/DevPanel.jsx";
+import ThemeSwitch from "./components/ThemeSwitch.jsx";
+import DotsBackdrop from "./components/DotsBackdrop.jsx";
+import RidgeFoot from "./components/RidgeFoot.jsx";
+import { useTheme } from "./lib/theme.js";
 import { IconLens } from "./components/Icons.jsx";
 
 function readURL() {
@@ -30,6 +34,7 @@ function writeURL(src) {
 export default function App() {
   const [source, setSource] = useState(readURL);
   const [taxonomy, setTaxonomy] = useState(null);
+  const theme = useTheme();
   const offline = source?.kind === "demo";
   const { state, cancel } = useAnalysis(source, taxonomy);
 
@@ -54,6 +59,9 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion="user">
+      {/* 点阵背景只在主题 B 挂载：A 主题的底纹是 CSS 画的，没必要养一块 canvas */}
+      {theme === "geek" && <DotsBackdrop />}
+
       <div className="shell">
         <nav className="topbar">
           <button className="brand" onClick={() => go(null)} aria-label="回到首页">
@@ -61,7 +69,10 @@ export default function App() {
             <span className="brand__zh">条款透镜</span>
             <span className="brand__en meta">CLAUSELENS</span>
           </button>
-          {offline && <span className="meta topbar__demo">DEMO · 演示数据，不连接服务器</span>}
+          <div className="topbar__right">
+            {offline && <span className="meta topbar__demo">DEMO · 演示数据，不连接服务器</span>}
+            <ThemeSwitch />
+          </div>
         </nav>
 
         <main className="stage">
@@ -86,6 +97,7 @@ export default function App() {
           </AnimatePresence>
         </main>
 
+        <RidgeFoot />
         <footer className="disclaimer">
           <span className="meta">CLAUSELENS · 条款透镜</span>
           <p>结果由程序自动分析，仅供参考，不构成法律意见。</p>

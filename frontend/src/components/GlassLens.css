@@ -1,0 +1,523 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   玻璃透镜 · 05 · SOURCE「原文」区里的那一颗（GlassLens.jsx 专用）
+   ─────────────────────────────────────────────────────────────────────────
+   观感参考 Bencho 的 GlassBubble（MIT · glass lens.txt）：中间轻微放大、边缘更硬、
+   上缘吃光、最边缘裂开一条彩色、底下压一片软影。
+
+   那边是 WebGL：整页当纹理，每个像素问 SDF 离边多远，再沿法线往外取样。这里不能
+   那么干——底下是活的 DOM 文本（滚动、换文档、认 .hl 都得跟上）。于是：
+     · 球 = 一个 absolute 的圆，挂在 body 级的定位层上，坐标是页面坐标；
+       它要在阅读器面板内外都能待着，所以不能被 .reader 的 overflow:hidden 裁到；
+     · 放大 = 把 .reader__body 深拷贝进裁剪圆再 scale（见 GlassLens.jsx）；
+     · 弯折 = 三层克隆，各露一环（.glens__band--mid / --rim）；
+     · 颜色（红/青色散、棱镜光谱、译文卡的语义色）只在这颗球和它的卡片里出现。
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* body 级的定位层：零尺寸、不裁子元素，坐标 = 页面坐标（跟着文档滚动） */
+.glens-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  z-index: 40;
+  pointer-events: none;
+  color: var(--ink-2);
+}
+
+/* ── 球 ────────────────────────────────────────────────────────────────── */
+.glens__ball {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  width: var(--glens-d, 190px);
+  height: var(--glens-d, 190px);
+  border-radius: 50%;
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  outline: none;
+  transform: translate3d(0, 0, 0);
+  transform-origin: 50% 50%;
+  will-change: transform;
+  /* 透过去一点点：轻微提纯 + 对比，玻璃不是一块透明塑料 */
+  background: radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02) 42%, rgba(255, 255, 255, 0) 62%);
+  backdrop-filter: blur(0.4px) saturate(1.25) contrast(1.05);
+  -webkit-backdrop-filter: blur(0.4px) saturate(1.25) contrast(1.05);
+  /* 一圈亮边（白 70%）+ 缘上吃光 + 背光面压暗 + 底下那片软影 */
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.7),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.12),
+    inset 3px 5px 18px rgba(255, 255, 255, 0.34),
+    inset -10px -14px 30px color-mix(in srgb, var(--ink) 16%, transparent),
+    0 18px 36px rgba(0, 0, 0, 0.22),
+    0 5px 12px rgba(0, 0, 0, 0.14);
+}
+.glens__ball.is-dragging {
+  cursor: grabbing;
+}
+.glens__ball:focus,
+.glens__ball:focus-visible {
+  /* 不要任何外框：玻璃球自己有轮廓 */
+  outline: none !important;
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.7),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.12),
+    inset 3px 5px 18px rgba(255, 255, 255, 0.34),
+    inset -10px -14px 30px color-mix(in srgb, var(--ink) 16%, transparent),
+    0 18px 36px rgba(0, 0, 0, 0.22),
+    0 5px 12px rgba(0, 0, 0, 0.14);
+}
+.glens-layer ::selection {
+  background: transparent;
+}
+
+/* 裁剪圆：里面只画那份「被折射过的画面」。不压正文时它整层透明 = 一颗纯玻璃球 */
+.glens__lens {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 140ms linear;
+}
+.glens__ball.is-over .glens__lens {
+  opacity: 1;
+}
+/* 克隆建好以后，球里是「一块被折射过的画面」，底色要挡住背后那份原文字——
+   不然放大后的字会和没放大的字叠成双影。底色取阅读器自己的底色，四周看不出接缝。 */
+.glens__ball[data-mag="1"] .glens__lens {
+  background: var(--sheet);
+}
+[data-theme="geek"] .glens__ball[data-mag="1"] .glens__lens {
+  /* geek 的 .reader 是 sheet 72% 叠在黑底上，这里取同一个等价实色 */
+  background: color-mix(in srgb, var(--sheet) 72%, #000);
+}
+
+/* 三层克隆：都在 0 0 / transform-origin 0 0 下平移，由 JS 按圆心对齐。
+   will-change 是为了让浏览器按「缩放后的倍率」给这一层做栅格化：不提层时中文
+   会被当成 1 倍位图拉大（糊成方块）。 */
+.glens__mag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+  will-change: transform;
+}
+/* 环：每层只在自己的半径带里露出来（mask 的百分比按半径算）。
+   三条带子叠起来 = 「放大率从 1.7 连续衰减到 1.16」，比两层像玻璃得多。
+   虚化与浓度也在这里做：band 不被缩放，滤镜作用在已经放大好的画面上。 */
+.glens__band {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  pointer-events: none;
+}
+/* 主层：中心到 ~88% 半径（再往外交给中环/边环，避免叠成双影） */
+.glens__mainclip {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(closest-side, #000 0%, #000 78%, transparent 90%);
+  mask-image: radial-gradient(closest-side, #000 0%, #000 78%, transparent 90%);
+}
+.glens__band--mid {
+  filter: blur(0.55px);
+  opacity: 0.95;
+  -webkit-mask-image: radial-gradient(closest-side, transparent 44%, #000 62%, #000 80%, transparent 90%);
+  mask-image: radial-gradient(closest-side, transparent 44%, #000 62%, #000 80%, transparent 90%);
+}
+.glens__band--rim {
+  filter: blur(1.2px);
+  opacity: 0.82;
+  -webkit-mask-image: radial-gradient(closest-side, transparent 64%, #000 80%, #000 94%, transparent 99.5%);
+  mask-image: radial-gradient(closest-side, transparent 64%, #000 80%, #000 94%, transparent 99.5%);
+}
+
+/* 浅色主题（纸）：球常常停在白纸上，光靠阴影会「化」掉 —— 加一圈极淡的墨线收边，
+   亮边压在白边上才看得出球体。 */
+[data-theme="light"] .glens__ball {
+  box-shadow:
+    inset 0 0 0 1px rgba(23, 22, 20, 0.1),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.8),
+    inset 3px 5px 18px rgba(255, 255, 255, 0.5),
+    inset -10px -14px 30px rgba(23, 22, 20, 0.1),
+    0 0 0 1px rgba(23, 22, 20, 0.05),
+    0 16px 32px rgba(40, 30, 10, 0.14),
+    0 4px 10px rgba(40, 30, 10, 0.1);
+}
+[data-theme="light"] .glens__shade {
+  background: radial-gradient(
+    closest-side,
+    transparent 48%,
+    rgba(23, 22, 20, 0.06) 78%,
+    rgba(23, 22, 20, 0.16) 92%,
+    rgba(23, 22, 20, 0.3) 100%
+  );
+}
+[data-theme="light"] .glens__ball.is-refracting .glens__shade {
+  background: radial-gradient(
+    closest-side,
+    transparent 44%,
+    rgba(23, 22, 20, 0.08) 80%,
+    rgba(23, 22, 20, 0.2) 94%,
+    rgba(23, 22, 20, 0.34) 100%
+  );
+}
+
+/* ── 玻璃的形：边缘渐暗 / 上缘吃光 ────────────────────────────────────── */
+.glens__shade {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    transparent 50%,
+    color-mix(in srgb, var(--ink) 7%, transparent) 78%,
+    color-mix(in srgb, var(--ink) 20%, transparent) 93%,
+    color-mix(in srgb, var(--ink) 34%, transparent) 100%
+  );
+}
+.glens__sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.55;
+  /* 玻璃的反光是一道弧，不是糊一层白雾——球里现在是放大的字，大面积白会把它盖住 */
+  background:
+    radial-gradient(46% 24% at 31% 12%, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0) 72%),
+    radial-gradient(24% 14% at 62% 6%, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 76%);
+}
+
+/* ── 色散：两层错位的细环（红 / 青），平时几乎看不见 ─────────────────────
+   screen 混色 = 当光叠上去，不是当颜色涂；裁在球内，页面上不留色。
+   白底上 screen 只会更白（浅色主题另有覆盖，换成 multiply）。 */
+.glens__disp {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: screen;
+  transition: opacity 260ms var(--e-out, ease);
+  -webkit-mask-image: radial-gradient(closest-side, transparent 93%, #000 96.5%, #000 99.4%, transparent 100%);
+  mask-image: radial-gradient(closest-side, transparent 93%, #000 96.5%, #000 99.4%, transparent 100%);
+}
+.glens__disp--r {
+  background: radial-gradient(closest-side, transparent 94%, rgba(255, 62, 92, 0.6) 97.5%, rgba(255, 62, 92, 0) 100%);
+  transform: translate(2px, 0.5px);
+}
+.glens__disp--c {
+  background: radial-gradient(closest-side, transparent 94%, rgba(52, 214, 255, 0.55) 97.5%, rgba(52, 214, 255, 0) 100%);
+  transform: translate(-2px, -0.5px);
+}
+
+/* ── 棱镜光谱：命中高亮时才亮起来，沿着边缘慢慢转 ───────────────────────── */
+.glens__prism {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+  transition: opacity 340ms var(--e-out, ease);
+  background: conic-gradient(
+    from 210deg,
+    #ff3d6e,
+    #ff9a3d,
+    #ffe14d,
+    #5ef08a,
+    #43d9ff,
+    #7a9cff,
+    #c174ff,
+    #ff3d6e
+  );
+  -webkit-mask-image: radial-gradient(closest-side, transparent 90%, #000 94%, #000 98.5%, transparent 100%);
+  mask-image: radial-gradient(closest-side, transparent 90%, #000 94%, #000 98.5%, transparent 100%);
+  filter: blur(0.9px) saturate(1.15);
+}
+
+/* ── 命中：边缘的彩全部升上来 ─────────────────────────────────────────── */
+.glens__ball.is-refracting .glens__disp {
+  opacity: 0.9;
+}
+.glens__ball.is-refracting .glens__prism {
+  opacity: 0.62;
+  animation: glens-prism 9s linear infinite;
+}
+.glens__ball.is-refracting .glens__shade {
+  /* 折射的时候边缘更「硬」：内圈再压一点 */
+  background: radial-gradient(
+    closest-side,
+    transparent 46%,
+    color-mix(in srgb, var(--ink) 10%, transparent) 80%,
+    color-mix(in srgb, var(--ink) 26%, transparent) 94%,
+    color-mix(in srgb, var(--ink) 36%, transparent) 100%
+  );
+}
+@keyframes glens-prism {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* 浅色主题（纸）：球里是白底，screen 叠上去只会更白 —— 换成 multiply：
+   色散只落在被折射的「字」上（白纸不变），这才是玻璃该有的样子。 */
+[data-theme="light"] .glens__disp {
+  mix-blend-mode: multiply;
+  opacity: 0.34;
+}
+[data-theme="light"] .glens__ball.is-refracting .glens__disp {
+  opacity: 0.92;
+}
+[data-theme="light"] .glens__prism {
+  mix-blend-mode: multiply;
+}
+[data-theme="light"] .glens__ball.is-refracting .glens__prism {
+  opacity: 0.44;
+}
+
+/* ── 高亮句上的 ASCII 过渡层：纯视觉，覆盖那几行，不参与排版 ─────────────── */
+.glens__fx {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ── 含义 / 译文卡：贴在高亮句下方，页面坐标，宽度固定 ───────────────────── */
+.glens__card {
+  position: absolute;
+  z-index: 4;
+  width: 300px;
+  max-width: calc(100vw - 24px);
+  padding: 13px 15px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r, 12px);
+  background: var(--sheet);
+  color: var(--ink);
+  box-shadow: var(--sh-3, 0 18px 42px rgba(0, 0, 0, 0.2));
+  text-align: left;
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.62;
+  letter-spacing: 0;
+  pointer-events: none;
+  white-space: normal;
+  animation: glens-card 240ms var(--e-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+[data-theme="light"] .glens__card {
+  background: var(--paper);
+  box-shadow: 0 18px 44px rgba(40, 30, 10, 0.16);
+}
+[data-theme="geek"] .glens__card {
+  background: var(--paper-2);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.72);
+}
+@keyframes glens-card {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+.glens__verdict {
+  display: block;
+  font-weight: 600;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.glens__explain {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.65;
+  min-height: 1.65em;
+}
+.glens__caret {
+  font-style: normal;
+  opacity: 0.55;
+  animation: glens-caret 900ms steps(1) infinite;
+}
+@keyframes glens-caret {
+  50% {
+    opacity: 0;
+  }
+}
+.glens__labels {
+  margin: 8px 0 0;
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+}
+.glens__quote {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-family: var(--serif);
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+/* 读屏专用（卡片是纯视觉的，内容在这里念出来） */
+.glens__live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+  color: transparent;
+}
+
+/* ══ 主题 B · 纯黑白：玻璃在黑底上是「边缘吃光 + 更硬的暗环」，不是暗部 ── */
+[data-theme="geek"] .glens__ball {
+  background: radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02) 42%, rgba(255, 255, 255, 0) 62%);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.5),
+    inset 0 0 0 3px rgba(255, 255, 255, 0.08),
+    inset 3px 5px 20px rgba(255, 255, 255, 0.18),
+    inset -12px -16px 32px rgba(0, 0, 0, 0.72),
+    0 20px 40px rgba(0, 0, 0, 0.66),
+    0 5px 12px rgba(0, 0, 0, 0.5);
+}
+[data-theme="geek"] .glens__shade {
+  background: radial-gradient(
+    closest-side,
+    transparent 50%,
+    rgba(255, 255, 255, 0.05) 84%,
+    rgba(255, 255, 255, 0.12) 96%,
+    rgba(255, 255, 255, 0.2) 100%
+  );
+}
+[data-theme="geek"] .glens__ball.is-refracting .glens__shade {
+  background: radial-gradient(
+    closest-side,
+    transparent 44%,
+    rgba(255, 255, 255, 0.07) 82%,
+    rgba(255, 255, 255, 0.16) 95%,
+    rgba(255, 255, 255, 0.28) 100%
+  );
+}
+[data-theme="geek"] .glens__sheen {
+  opacity: 0.5;
+  background:
+    radial-gradient(46% 24% at 31% 12%, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0) 72%),
+    radial-gradient(24% 14% at 62% 6%, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0) 76%);
+}
+
+@media (max-width: 640px) {
+  .glens__card {
+    width: 240px;
+    font-size: 12.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glens__card {
+    animation: none;
+  }
+  .glens__ball.is-refracting .glens__prism {
+    animation: none;
+  }
+  .glens__disp {
+    transition: none;
+  }
+  .glens__caret {
+    animation: none;
+  }
+}
+
+/* ── 译文卡（Lead 增补）：原位替换会按原句 bbox 截断，这里补一张完整的解释卡。
+   绝对定位覆盖层：不参与正文排版、不改变行高，透镜移开后随 hit 一起淡出。 */
+.glens__card {
+  position: absolute;
+  z-index: 6;
+  width: 300px;
+  padding: 12px 14px 13px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  color: var(--ink);
+  box-shadow: 0 18px 44px rgb(0 0 0 / 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-size: 13px;
+  line-height: 1.6;
+  pointer-events: none;
+  animation: glens-card-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes glens-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+.glens__card-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.72;
+  margin-bottom: 6px;
+}
+.glens__card-tags {
+  font-family: var(--mono);
+  font-size: 10px;
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.glens__card-body {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.glens__card-quote {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--ink-3);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .glens__card {
+    animation: none;
+  }
+}
+
+/* 译文顶替原文时：这条 mark 的字透明、底色透明（占位与行高都不变） */
+.reader__body mark.hl.is-glens-hidden {
+  color: transparent !important;
+  background: transparent !important;
+  text-decoration-color: transparent !important;
+}
+
+/* 译文画布要挂在正文容器里跟着一起滚：给它一个定位祖先 */
+.reader__body {
+  position: relative;
+}
+.glens__fx {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}

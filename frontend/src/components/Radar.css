@@ -1,0 +1,354 @@
+/* 雷达图 · 主题 B「点阵」附加层
+ *
+ * 归属：docs/design/theme-geek.md §7「雷达代理」只改 Radar.jsx + 本文件。
+ * 契约：A 主题（暖纸）零回归 —— 本文件里的新结构默认 display:none，只有挂在
+ *       [data-theme="geek"] 下的规则才让它们显形；颜色一律取 token，不写死十六进制。
+ *
+ * B 主题的四层，从下往上：
+ *   1. 网格   = 四级点阵环（外亮内暗）+ 虚线轴
+ *   2. 数据面 = 方形点云（亮度随 r/该方向得分分档）+ 1px 折线勾边 + 4px 顶点方块
+ *   3. 扫描   = 从中心向外的扇形扫描头（screen 混合，扫过的点云被提亮）
+ *   4. 维度条 = 20 段小方块（按得分亮起 n/20 段）
+ */
+
+/* ── 0. 两套主题各用一层结构 ────────────────────────────────────────────── */
+.radar__rings,
+.radar__cloud,
+.radar__edge,
+.radar__node,
+.radar__beam,
+.dimbar__segs {
+  display: none;
+}
+
+[data-theme="geek"] .radar__rings,
+[data-theme="geek"] .radar__cloud,
+[data-theme="geek"] .radar__edge,
+[data-theme="geek"] .radar__node {
+  display: inline;
+}
+[data-theme="geek"] .dimbar__segs {
+  display: grid;
+}
+
+/* B 主题不要 A 的实心面与实心网格：点云与点阵环取代它们 */
+[data-theme="geek"] .radar__grid,
+[data-theme="geek"] .radar__area,
+[data-theme="geek"] .radar__pt {
+  display: none;
+}
+
+/* ── 1. 网格：点阵环（沿边 12px 一个点，外环最亮）+ 虚线轴 ─────────────── */
+[data-theme="geek"] .radar__dot {
+  fill: var(--dot-hi);
+}
+[data-theme="geek"] .radar__dot.is-r1 {
+  fill-opacity: 0.22;
+}
+[data-theme="geek"] .radar__dot.is-r2 {
+  fill-opacity: 0.32;
+}
+[data-theme="geek"] .radar__dot.is-r3 {
+  fill-opacity: 0.46;
+}
+[data-theme="geek"] .radar__dot.is-r4 {
+  fill-opacity: 0.74;
+}
+
+[data-theme="geek"] .radar__axis {
+  stroke: var(--line-2);
+  stroke-dasharray: 2 5;
+}
+
+/* ── 2. 数据面：点云 + 折线 + 顶点方块 ─────────────────────────────────── */
+[data-theme="geek"] .radar__cloud-lv {
+  fill: var(--dot-hi);
+}
+[data-theme="geek"] .radar__cloud-lv.lv-1 {
+  fill-opacity: 0.16;
+}
+[data-theme="geek"] .radar__cloud-lv.lv-2 {
+  fill-opacity: 0.27;
+}
+[data-theme="geek"] .radar__cloud-lv.lv-3 {
+  fill-opacity: 0.4;
+}
+[data-theme="geek"] .radar__cloud-lv.lv-4 {
+  fill-opacity: 0.55;
+}
+[data-theme="geek"] .radar__cloud-lv.lv-5 {
+  fill-opacity: 0.8;
+}
+
+[data-theme="geek"] .radar__edge {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 1;
+  stroke-linejoin: miter;
+  transition: stroke var(--t-micro) var(--e-out);
+}
+[data-theme="geek"] .radar.is-hot .radar__edge {
+  stroke: var(--ink);
+}
+
+[data-theme="geek"] .radar__node.g-A {
+  fill: var(--g-A);
+}
+[data-theme="geek"] .radar__node.g-B {
+  fill: var(--g-B);
+}
+[data-theme="geek"] .radar__node.g-C {
+  fill: var(--g-C);
+}
+[data-theme="geek"] .radar__node.g-D {
+  fill: var(--g-D);
+}
+[data-theme="geek"] .radar__node.g-E {
+  fill: var(--g-E);
+}
+
+/* 轴标签：A 用纸色描边把字从线条里“抠”出来；B 的黑底不需要，改用等宽数字 */
+[data-theme="geek"] .radar__label {
+  text-shadow: none;
+  color: var(--ink-2);
+  z-index: 2;
+  transition: color var(--t-micro) var(--e-out);
+}
+[data-theme="geek"] .radar__label b {
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+[data-theme="geek"] .radar__label.is-on {
+  color: var(--ink);
+}
+[data-theme="geek"] .radar__label.is-on b {
+  color: var(--ink);
+}
+
+/* ── 3. 扫描头：从中心向外的扇形，转一圈扫过点云（screen 混合＝叠加提亮）────
+   尺寸：六边形外接圆直径 = 216/300 = 72% 容器高，取 74% 让光稍微溢出环外。 */
+[data-theme="geek"] .radar__beam {
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  height: 74%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.6;
+  background: conic-gradient(
+    from -36deg,
+    transparent 0deg,
+    color-mix(in srgb, var(--beam) 10%, transparent) 10deg,
+    color-mix(in srgb, var(--beam) 32%, transparent) 24deg,
+    color-mix(in srgb, var(--beam) 60%, transparent) 33deg,
+    var(--beam) 35deg,
+    transparent 36deg
+  );
+  /* 外缘渐隐：扫描头只在环内有光，不糊到卡片边上 */
+  -webkit-mask-image: radial-gradient(closest-side, #000 0%, rgb(0 0 0 / 0.7) 44%, transparent 92%);
+  mask-image: radial-gradient(closest-side, #000 0%, rgb(0 0 0 / 0.7) 44%, transparent 92%);
+  will-change: rotate;
+  animation: radar-sweep 4.4s linear infinite;
+}
+@keyframes radar-sweep {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* ── 4. 右侧维度条：20 段小方块（亮段语义色、暗段 --line） ──────────────── */
+[data-theme="geek"] .dimbar__fill {
+  display: none;
+}
+[data-theme="geek"] .dimbar__track {
+  height: 12px;
+  background: none;
+  border-radius: 0;
+  overflow: visible;
+}
+[data-theme="geek"] .dimbar__segs {
+  grid-template-columns: repeat(20, 1fr);
+  gap: 2px;
+  height: 100%;
+  --seg-ink: var(--ink-2);
+}
+[data-theme="geek"] .dimbar__segs[data-grade="A"] {
+  --seg-ink: var(--g-A);
+}
+[data-theme="geek"] .dimbar__segs[data-grade="B"] {
+  --seg-ink: var(--g-B);
+}
+[data-theme="geek"] .dimbar__segs[data-grade="C"] {
+  --seg-ink: var(--g-C);
+}
+[data-theme="geek"] .dimbar__segs[data-grade="D"] {
+  --seg-ink: var(--g-D);
+}
+[data-theme="geek"] .dimbar__segs[data-grade="E"] {
+  --seg-ink: var(--g-E);
+}
+[data-theme="geek"] .dimbar__segs i {
+  display: block;
+  height: 100%;
+  background: var(--line);
+}
+[data-theme="geek"] .dimbar__segs i.is-on {
+  background: var(--seg-ink);
+  animation: seg-lit var(--t-state) var(--e-out) both;
+  animation-delay: calc(var(--k, 0) * 14ms);
+}
+@keyframes seg-lit {
+  from {
+    opacity: 0;
+  }
+}
+
+/* 等宽数字（--num 在 B 主题里就是 --mono） */
+[data-theme="geek"] .dimbar__val b {
+  font-family: var(--num, var(--mono));
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* ── 5. reduced-motion：扫描与点亮动画一律关掉（契约 §0） ───────────────── */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="geek"] .radar__beam {
+    display: none;
+    animation: none;
+  }
+  [data-theme="geek"] .dimbar__segs i.is-on {
+    animation: none;
+  }
+  [data-theme="geek"] .radar__edge {
+    transition: none;
+  }
+}
+
+/* 窄屏：20 段挤在半个手机宽里，缝再收一点 */
+@media (max-width: 640px) {
+  [data-theme="geek"] .dimbar__segs {
+    gap: 1.5px;
+  }
+  [data-theme="geek"] .dimbar__track {
+    height: 10px;
+  }
+}
+/* ── 11 极简覆盖（Lead 增补，2026-11-13） ─────────────────────────
+   上面的点阵环/点云/扇形扫描/20 段条是「装饰型」语言；新的 Quiet Dark 走 SOFT LAB 的克制路线：
+   细网格 + 一条 1.5px 的强调色折线 + 10% 面积填充 + 顶点圆点，维度条回到细长圆角条。
+   几何、拖动、tooltip 全不动，只换视觉。 */
+[data-theme="geek"] .radar__rings,
+[data-theme="geek"] .radar__cloud,
+[data-theme="geek"] .radar__beam,
+[data-theme="geek"] .dimbar__segs {
+  display: none;
+}
+[data-theme="geek"] .radar__grid,
+[data-theme="geek"] .radar__axis,
+[data-theme="geek"] .radar__area,
+[data-theme="geek"] .radar__pt {
+  display: revert;
+}
+[data-theme="geek"] .radar__grid {
+  fill: none;
+  stroke: rgba(242, 244, 248, 0.09);
+  stroke-width: 1;
+}
+[data-theme="geek"] .radar__grid:last-of-type {
+  stroke: rgba(242, 244, 248, 0.16);
+}
+[data-theme="geek"] .radar__axis {
+  stroke: rgba(242, 244, 248, 0.1);
+  stroke-dasharray: none;
+}
+[data-theme="geek"] .radar__area {
+  fill: color-mix(in srgb, var(--accent) 12%, transparent);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+[data-theme="geek"] .radar__pt {
+  fill: var(--accent);
+  stroke: var(--paper);
+  stroke-width: 2;
+}
+[data-theme="geek"] .radar__pt.g-A { fill: var(--g-A); }
+[data-theme="geek"] .radar__pt.g-B { fill: var(--g-B); }
+[data-theme="geek"] .radar__pt.g-C { fill: var(--g-C); }
+[data-theme="geek"] .radar__pt.g-D { fill: var(--g-D); }
+[data-theme="geek"] .radar__pt.g-E { fill: var(--g-E); }
+[data-theme="geek"] .radar__label {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--ink-3);
+  letter-spacing: 0;
+}
+[data-theme="geek"] .radar__label b {
+  font-family: var(--display);
+  font-weight: 600;
+  color: var(--ink);
+}
+[data-theme="geek"] .radar__label.is-on {
+  color: var(--ink);
+}
+[data-theme="geek"] .radar__tip {
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: color-mix(in srgb, var(--paper-2) 92%, transparent);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  color: var(--ink-2);
+}
+[data-theme="geek"] .dimbar {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+[data-theme="geek"] .dimbar__name {
+  color: var(--ink-2);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+[data-theme="geek"] .dimbar__track {
+  background: rgba(242, 244, 248, 0.08);
+  border-radius: 999px;
+  height: 4px;
+}
+[data-theme="geek"] .dimbar__fill {
+  border-radius: 999px;
+}
+[data-theme="geek"] .dimbar__val b {
+  font-family: var(--display);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+[data-theme="geek"] .gradechip {
+  border-radius: 6px;
+}
+
+/* ── 12 修正（2026-11-13 第四轮）：维度进度条要看得见 ─────────────
+   上一版把 .dimbar__segs（20 段方块）关掉了，但 .dimbar__fill 仍带着别人的 display:none，
+   于是六条进度全是空轨道。这里把它放回来，并给足对比度。 */
+[data-theme="geek"] .dimbar__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ink);
+  opacity: 0.92;
+  transform-origin: left center;
+}
+[data-theme="geek"] .dimbar__track {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+[data-theme="geek"] .dimbar {
+  border-bottom: 1px solid var(--line);
+}
+[data-theme="geek"] .dimbar__val b {
+  color: var(--ink);
+}

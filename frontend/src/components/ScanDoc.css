@@ -1,0 +1,426 @@
+/* ScanDoc —— 等待页中央那张「文档纸」。
+   骨架与 A 主题的观感全部来自 styles.css 的 .paper / .paper__*（本文件在 A 下只做 display 开关，
+   不改任何尺寸、颜色、阴影），B 主题（data-theme="geek"）在这里长成「点阵文档」。
+
+   点阵怎么铺：每行一条 6px 周期的 radial-gradient 背景（一格一个 2px 点），整行铺满，
+   行宽沿用组件里的伪随机百分比，所以「点阵颜料条」的长度天然有变化。
+   点亮怎么逐点：每行一个 ::after 铺同一套点阵、换成 --dot-hi，用 clip-path 从右往左裁掉，
+   再配 steps() 让裁切一格一停 —— 于是看起来是一个点一个点亮起来，扫完停在 35% 亮度。
+   全程只有 transform / clip-path / opacity，不动布局，不为任何一个点建 DOM。 */
+
+.scandoc {
+  --sd-t: 2.4s; /* 一个扫描周期：扫描头、逐行点亮的节拍都挂在它上面 */
+  --sd-row-h: 7px; /* 行高，与 styles.css 的 .paper__line 一致 */
+  --sd-dot: 6px; /* 点阵横向周期：6px 一格，一格一个 2px 的点 */
+  --sd-pad: 26px; /* = .paper 的内边距，扫描头要横向铺满整张纸 */
+  --sd-trail: 56px; /* 扫描头拖尾长度（40–60px） */
+}
+
+/* ── A 主题：新增层全部不参与排版、不显示 ───────────────────────── */
+.scandoc__corner,
+.scandoc__beam,
+.scandoc__readout,
+.scandoc__stampmark,
+.scandoc__stamplabel {
+  display: none;
+}
+
+/* ── B 主题：纸面 ───────────────────────────────────────────── */
+[data-theme="geek"] .scandoc.paper {
+  background-color: var(--sheet);
+  border: 1px solid var(--line);
+  border-radius: 0; /* 直角 */
+  box-shadow: none; /* 不发光的纸，靠线区分 */
+}
+
+/* 四角角标：1px 的直角括号，给纸面一个取景框 */
+[data-theme="geek"] .scandoc__corner {
+  display: block;
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 0 solid var(--line-2);
+  pointer-events: none;
+}
+[data-theme="geek"] .scandoc__corner[data-c="tl"] {
+  top: 6px;
+  left: 6px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+[data-theme="geek"] .scandoc__corner[data-c="tr"] {
+  top: 6px;
+  right: 6px;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+[data-theme="geek"] .scandoc__corner[data-c="bl"] {
+  bottom: 6px;
+  left: 6px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+[data-theme="geek"] .scandoc__corner[data-c="br"] {
+  bottom: 6px;
+  right: 6px;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+
+/* ── B 主题：正文行 = 点阵颜料条 ───────────────────────────── */
+[data-theme="geek"] .scandoc .paper__lines {
+  position: relative; /* 扫描头在这里定位 */
+}
+
+[data-theme="geek"] .scandoc .paper__line {
+  position: relative;
+  border-radius: 0; /* 圆只属于「点」 */
+  background-color: transparent; /* 扔掉 A 的灰条 */
+  /* 6px 一格、一格一个 2px 的点；点在格子里横竖都居中，落成方块状的实心点 */
+  background-image: radial-gradient(circle at 3px 3.5px, var(--dot) 1px, transparent 1px);
+  background-size: var(--sd-dot) var(--sd-row-h);
+  background-repeat: repeat;
+}
+
+/* 点亮层：同一套点阵，换成被点亮的亮度；未打印时整条裁掉 */
+[data-theme="geek"] .scandoc .paper__line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 3px 3.5px, var(--dot-hi) 1px, transparent 1px);
+  background-size: var(--sd-dot) var(--sd-row-h);
+  background-repeat: repeat;
+  clip-path: inset(0 100% 0 0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* scanning 时接管 A 的 lineLit（那条会把行填成一条实心色带，在 B 里不该出现） */
+[data-theme="geek"] .scandoc.paper--scanning .paper__line {
+  animation: none;
+}
+
+[data-theme="geek"] .scandoc[data-print] .paper__line::after {
+  animation-name: sd-print;
+  animation-duration: var(--sd-t);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-delay: calc(var(--sd-at) * var(--sd-t));
+}
+
+/* 0→9%：从行首扫到行尾，steps 让它一格一停；之后回落到 35% 亮度并保持到本周期结束 */
+@keyframes sd-print {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    opacity: 1;
+    animation-timing-function: steps(36, end);
+  }
+  9% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+  13% {
+    opacity: 0.35;
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0.35;
+  }
+}
+
+/* ── B 主题：扫描头 ───────────────────────────────────────── */
+/* A 的整纸光带在 B 里换成放在行区里的点阵扫描头 */
+[data-theme="geek"] .scandoc .paper__scan {
+  display: none;
+}
+
+[data-theme="geek"] .scandoc__beam {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: calc(-1 * var(--sd-pad));
+  right: calc(-1 * var(--sd-pad));
+  height: 100%; /* 自身高度 = 行区高度：translateY(-100%) → 0 就是自上而下走一遍 */
+  pointer-events: none;
+  transform: translateY(-100%);
+  animation-name: sd-beam;
+  animation-duration: var(--sd-t);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+/* 拖尾：亮线在底部，往上 56px 渐隐 */
+[data-theme="geek"] .scandoc__beam::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--sd-trail);
+  border-bottom: 1px solid var(--beam);
+  background: linear-gradient(
+    to bottom,
+    transparent 0,
+    color-mix(in srgb, var(--beam) 2%, transparent) 46%,
+    color-mix(in srgb, var(--beam) 9%, transparent) 78%,
+    color-mix(in srgb, var(--beam) 30%, transparent) 93%,
+    color-mix(in srgb, var(--beam) 74%, transparent) 100%
+  );
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--beam) 26%, transparent));
+}
+
+/* 次级扫描线：1px 虚线，跟在扫描头后面 */
+[data-theme="geek"] .scandoc__beam::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--sd-trail) + 18px);
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--beam) 55%, transparent) 0 2px,
+    transparent 2px 6px
+  );
+  opacity: 0.7;
+}
+
+@keyframes sd-beam {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* ── B 主题：左下角机器读数 ───────────────────────────────── */
+[data-theme="geek"] .scandoc__readout {
+  display: flex;
+  gap: 5px;
+  align-items: baseline;
+  position: absolute;
+  left: 11px;
+  bottom: 9px;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+[data-theme="geek"] .scandoc__readout b {
+  color: var(--ink-2);
+  font-weight: 700;
+}
+[data-theme="geek"] .scandoc__sep {
+  opacity: 0.4;
+}
+
+/* ── B 主题：落章鬼影 = 方形双线框 + 等级占位 ─────────────── */
+[data-theme="geek"] .scandoc .paper__stampghost {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  row-gap: 3px;
+  width: 92px;
+  height: 92px;
+  border: 1px solid var(--bad);
+  border-radius: 0;
+  /* 外框 1px + 内框 1px，中间留 3px 空隙 = 双线框 */
+  box-shadow: inset 0 0 0 3px transparent, inset 0 0 0 4px var(--bad);
+  background: none;
+  color: var(--bad);
+}
+[data-theme="geek"] .scandoc__stampmark {
+  display: block;
+  font-family: var(--mono);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+}
+[data-theme="geek"] .scandoc__stamplabel {
+  display: block;
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.22em;
+  opacity: 0.75;
+}
+
+/* ── 暂停：标签页不可见时按住所有逐帧动效 ─────────────────── */
+.scandoc[data-paused] .scandoc__beam,
+.scandoc[data-paused] .paper__line::after,
+/* A 主题原有那两条循环动画也一起按住（只有标签页不可见时才生效，观感不变） */
+.scandoc[data-paused] .paper__scan,
+.scandoc[data-paused].paper--scanning .paper__line {
+  animation-play-state: paused;
+}
+
+/* ── reduce：扫描头与逐点点亮全部关掉，只留静态点阵 ─────────── */
+.scandoc[data-reduce] .scandoc__beam {
+  display: none;
+}
+[data-theme="geek"] .scandoc[data-reduce] .paper__line::after {
+  animation: none;
+  clip-path: none;
+  opacity: 0.35;
+}
+
+/* 系统级 reduce（motion 的 useReducedMotion 还没落地的首帧也兜住） */
+@media (prefers-reduced-motion: reduce) {
+  .scandoc .scandoc__beam {
+    display: none;
+  }
+  [data-theme="geek"] .scandoc.paper .paper__line::after {
+    animation: none;
+    clip-path: none;
+    opacity: 0.35;
+  }
+}
+
+/* ── 窄屏：纸的内边距变成 18px，扫描头跟着收 ─────────────── */
+@media (max-width: 640px) {
+  .scandoc {
+    --sd-pad: 18px;
+    --sd-trail: 46px;
+  }
+  [data-theme="geek"] .scandoc__readout {
+    left: 8px;
+    bottom: 7px;
+    font-size: 9px;
+  }
+}
+/* ── 10 极简覆盖（Lead 增补，2026-11-13） ─────────────────────────
+   用户要求「大道至简，抄 lm/bencho/softlab 的做法」。上面那套点阵行 + 四角角标 + 双重扫描线
+   属于「装饰型」语言，和新的 Quiet Dark 不搭，这里把它降级：
+     · 纸面 = bencho 式面板（18px 圆角、1px 发丝线、paper-2 底、无阴影）
+     · 正文行 = 普通细条（去掉点阵背景与逐点点亮）
+     · 只留一条 1px 的强调色扫描线；读数保留但压到最小 */
+[data-theme="geek"] .scandoc__corner {
+  display: none;
+}
+[data-theme="geek"] .scandoc.paper {
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper-3) 88%, transparent);
+  box-shadow: none;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+[data-theme="geek"] .scandoc .paper__lines {
+  gap: 12px;
+}
+[data-theme="geek"] .scandoc .paper__line,
+[data-theme="geek"] .scandoc.paper--scanning .paper__line {
+  height: 7px;
+  border-radius: 999px;
+  background-color: rgba(242, 244, 248, 0.09);
+  background-image: none;
+  opacity: 1;
+}
+[data-theme="geek"] .scandoc .paper__line::after {
+  display: none;
+}
+[data-theme="geek"] .scandoc .paper__scan {
+  display: none;
+}
+[data-theme="geek"] .scandoc__beam {
+  display: none;
+}
+/* 一条安静的扫描线：从行区顶部到底部，2.6s 一轮 */
+[data-theme="geek"] .scandoc .paper__lines::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-soft), transparent);
+  opacity: 0.7;
+  animation: sd-line 2600ms cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+[data-theme="geek"] .scandoc .paper__lines {
+  position: relative;
+  overflow: hidden;
+}
+@keyframes sd-line {
+  0% {
+    transform: translateY(-2px);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.8;
+  }
+  88% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+[data-theme="geek"] .scandoc__readout {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  opacity: 0.8;
+}
+[data-theme="geek"] .scandoc__readout b {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+[data-theme="geek"] .scandoc .paper__head {
+  border-bottom: 1px solid var(--line);
+}
+[data-theme="geek"] .scandoc .paper__title {
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 14px;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="geek"] .scandoc .paper__lines::after {
+    animation: none;
+    opacity: 0.4;
+    transform: translateY(50%);
+  }
+}
+
+/* ── 11 修正（2026-11-13 第四轮）：给这张纸一点动效 ───────────────
+   上一版把点阵行、逐点点亮、扫描头都简化掉了，结果整张纸是静止的。
+   这里补一条「打印机一行行过」的波：每行按 --i 错峰亮一下，配一条 2px 的扫描线；
+   纯 CSS，不动 DOM，B 主题以外不生效。 */
+[data-theme="geek"] .scandoc .paper__line {
+  animation: sd-row 2600ms linear infinite;
+  animation-delay: calc(var(--i, 0) * 88ms);
+}
+@keyframes sd-row {
+  0%,
+  100% {
+    background-color: rgba(255, 255, 255, 0.07);
+  }
+  5% {
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+  16% {
+    background-color: rgba(255, 255, 255, 0.07);
+  }
+}
+[data-theme="geek"] .scandoc .paper__lines::after {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
+  opacity: 1;
+  animation-duration: 2600ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="geek"] .scandoc .paper__line {
+    animation: none;
+    background-color: rgba(255, 255, 255, 0.09);
+  }
+}

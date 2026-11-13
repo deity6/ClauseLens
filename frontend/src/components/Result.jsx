@@ -6,7 +6,7 @@ import { fetchSummary } from "../lib/feedback.js";
 import { fmtChars, fmtMinutes } from "../lib/format.js";
 import { IconAlert } from "./Icons.jsx";
 import CountUp from "./CountUp.jsx";
-import Stamp from "./Stamp.jsx";
+import ScoreBadge from "./ScoreBadge.jsx";
 import TagWall from "./TagWall.jsx";
 import Radar from "./Radar.jsx";
 import Compliance from "./Compliance.jsx";
@@ -37,8 +37,7 @@ function Section({ n, en, title, children, className = "" }) {
     <motion.section
       className={`rsec ${className}`}
       initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.08 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: DUR.enter, ease: EASE.enter }}
     >
       <header className="rsec__head">
@@ -137,7 +136,7 @@ export default function Result({ result, taxonomy, offline, onAgain }) {
           )}
         </div>
         <div className="rhead__stamp">
-          <Stamp grade={score.grade} onLand={landed} />
+          <ScoreBadge grade={score.grade} score={score.value} onLand={landed} />
         </div>
       </motion.header>
 
