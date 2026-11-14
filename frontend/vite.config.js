@@ -9,6 +9,9 @@ const proxy = { "/api": { target: API, changeOrigin: true } };
 
 export default defineConfig({
   plugins: [react()],
+  // 显式清空 dist：不写这一条时实测旧产物（比如已经删掉的 theme-boot.v2.js、上一版 index-*.js）
+  // 会留在 dist 里被一起传上 Pages，既有幽灵文件又白占上传体积。
+  build: { emptyOutDir: true },
   server: { port: 5173, proxy },
   preview: { port: 4173, proxy },
 });

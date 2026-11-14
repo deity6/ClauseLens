@@ -18,7 +18,8 @@
 - 层级靠线 + 字号跳跃 + 留白，不靠大色块卡片堆；结果页可以有"印章"作为唯一的强装饰。
 - 深色模式（点阵主题）：**桌面不跟随系统**，默认浅色、手动拨开关才切（选择存 `localStorage['cl:theme']`）；
   **手机 / 平板**在用户没手动选过时跟随 `prefers-color-scheme`（系统深色→点阵，浅色→纸），系统中途变化也跟。
-  首帧由 `public/theme-boot.v2.js`（外链、CSP 允许）在 CSS 之前定 `data-theme`，避免先闪一下浅色；
+  首帧由 `index.html` 里的内联脚本在 CSS 之前定 `data-theme`（避免先闪一下浅色）；CSP 是 `script-src 'self'`，
+  脚本的 sha256 由 `scripts/csp-hash.mjs` 在 build 前自动写进 `public/_headers`（不要手改 hash）。
   `<html>` 上不写死主题值，React 侧（`lib/theme.js` 的 `getTheme`）只在引导脚本真跑过（`data-theme-boot` 存在）时才沿用。
 
 ## 2. 页面与流程（单页三态）

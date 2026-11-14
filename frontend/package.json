@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "predev": "node scripts/csp-hash.mjs",
     "build": "vite build",
+    "prebuild": "node scripts/csp-hash.mjs",
     "preview": "vite preview",
     "local": "vite build && vite preview --host 127.0.0.1"
   },
@@ -24,3 +26,4 @@
     "vite": "^7.0.0"
   }
 }
+

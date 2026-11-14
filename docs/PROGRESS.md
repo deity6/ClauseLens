@@ -825,3 +825,30 @@ found=0，只剩 registry 快照能用。所以之前很多「成功」其实是
   刷新后后端回 0/0 → 改投不认同 → 刷新后端 disagree → 清 localStorage 后从服务端认回「已记下」，全部断言通过。
 - `demo-vote.mjs`：`?demo=` 离线模式只写本机、`/api/feedback` 请求数 0，刷新后票还在。
 - `live-accept.mjs`：线上 iPhone 模拟 dark→`geek`、light→`light`、会话中切换实时跟、桌面 1440 开 dark 仍 `light`。
+
+## 2026-11-15（第十六轮）· 「最近怎么变慢了」排查：外链首帧脚本是元凶，顺手量了整条链路
+
+用户问「lens.dohub.tech 加载很慢，是不是要做 CF 优选」。实测（本机出口 （本机出口 IP，已隐去），`/cdn-cgi/trace`）：
+
+| 指标 | 结果 |
+|---|---|
+| CF 边缘 colo | **SJC / LAX / SEA**（cloudflare.com 同一条出口也是 LAX）——不是站点的问题，是 ISP→CF 的路由 |
+| ICMP RTT | 208 ms；TCP/TLS/TTFB 0.6–4 s |
+| 缓存资源 TTFB | 2 KB 的 `theme-boot.v2.js` 中位 1.28 s（**2 KB 也要一个 RTT**） |
+| HTML | `cf-cache-status: DYNAMIC` + `max-age=0`，每次访问都回源，TTFB 中位 1.88 s |
+| 字体 | 11 个 woff2 共 **490 KB**（霞鹜文楷子集），load 事件 4–5 s |
+| API | `/api/taxonomy` 直连 0.5 s，经 Pages Function 1.75–2.5 s；真实 `?q=baidu.com` 端到端 ~12 s（大头是后端抓取） |
+| 抽样 20+ 个 CF anycast IP | 全部落 SJC/LAX/SEA，没有亚洲 colo——这条出口上「优选」的收益不确定 |
+
+**真正由我们造成的退化**：上一轮为绕 CSP 把首帧脚本改成 `<head>` 里的外链 `theme-boot.v2.js`，
+它是**阻塞脚本**，在 1–2 s 的 RTT 上等于把首画往后推了 1–2 s。改回内联：
+- `index.html` 里 `<!-- theme-boot:start -->…<script>…</script>…<!-- theme-boot:end -->`；
+- 新增 `frontend/scripts/csp-hash.mjs`，`prebuild`/`predev` 自动算这段脚本的 sha256 写进 `public/_headers` 的 CSP
+  （`script-src 'self' 'sha256-…'`），**改脚本不会再忘同步 hash**；
+- 删掉 `public/theme-boot.v2.js` 与对应 `_headers` 规则（版本化文件名那套一并作废）。
+
+实测（线上，冷缓存）：FCP **2040–2956 ms → 1732–1824 ms**，DCL 2.6–3.0 s → 2.2 s，key 资源里少一个阻塞请求；
+CSP 只报 Cloudflare 自己注入的 inline/beacon（站点脚本正常执行：`data-theme-boot=geek`）。
+
+**还没做（按收益排序）**：字体减负（490 KB → 只留标题用子集/手机退回系统楷体）、HTML 边缘缓存 + 部署后 purge、
+API 直连省掉 Pages Function 那一跳。CF 优选/换线路是最后手段（本机出口抽样没找到更近的 colo）。

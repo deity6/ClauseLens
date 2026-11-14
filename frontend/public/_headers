@@ -4,16 +4,10 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Permissions-Policy: geolocation=(), microphone=(), camera=()
-  Content-Security-Policy: default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'sha256-3ddIfcJS9+0fQuqvtc15DgjuLmnugfl3jor3dr1DqYo='; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
-
-# 首帧主题引导脚本：路径带版本号（theme-boot.vN.js），一改逻辑就升版本。
-# 这条规则在 *.pages.dev 上有效；自定义域上 CF 的「浏览器缓存 TTL」会盖掉它（实测仍是 4h），
-# 所以别把正确性押在缓存头上——文件名换版本才是真办法。
-/theme-boot*.js
-  Cache-Control: public, max-age=0, must-revalidate
 
 /guilloche.svg
   Cache-Control: public, max-age=604800

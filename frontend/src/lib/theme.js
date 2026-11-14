@@ -1,6 +1,6 @@
 // 主题状态：两套主题共用一份骨架，切换只改 <html data-theme>。
 //
-// 为什么不用 React context：主题要在首帧之前就生效（public/theme-boot.v2.js 已经在 CSS 之前写过一次），
+// 为什么不用 React context：主题要在首帧之前就生效（index.html 的内联首帧脚本已经在 CSS 之前写过一次），
 // 而且 canvas（点阵背景、转场）也要读它。用模块级单例 + 订阅，任何地方都能同步拿到当前值。
 //
 // 主题名：
@@ -34,7 +34,7 @@ function stored() {
 }
 
 /** 手机 / 平板：移动端 UA，或「粗指针 + 小屏」。
- *  不在文档解析早期用 matchMedia("(max-width)")) 判：那时移动端的布局视口还是 980px，会误判（见 public/theme-boot.v2.js）。
+ *  不在文档解析早期用 matchMedia("(max-width)")) 判：那时移动端的布局视口还是 980px，会误判（见 index.html 里的内联首帧脚本）。
  *  screen 尺寸拿不到时（个别内置浏览器）退回视口宽度 —— 这个函数在 React 启动/媒体查询变化时才跑，那时视口是真的。 */
 export function isMobileLike() {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
@@ -114,7 +114,7 @@ export function startSystemThemeSync() {
     if (next === getTheme()) return;
     applyTheme(next, { persist: false });
   };
-  // 启动时先对齐一次：public/theme-boot.v2.js 的首帧脚本在少数环境（无头浏览器、手机里的内置浏览器、
+  // 启动时先对齐一次：index.html 里的内联首帧脚本在少数环境（无头浏览器、手机里的内置浏览器、
   // 被 CSP/网络拦掉）可能在媒体查询/UA 还没生效时就跑完了或没跑成；这里补一次，再在头两秒补两次，
   // 保证最后一定落到系统那一套。手动选过主题（stored() 有值）时每次都直接返回，不会跟用户抢。
   apply();
