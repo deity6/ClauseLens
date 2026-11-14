@@ -1375,6 +1375,18 @@ code {
 .votes__thanks {
   color: var(--good);
 }
+/* 窄屏：问题独占一行、两个按钮一行、提示（已记下 / 可改）再一行。
+   不这么排的话「认同 1 不认同 0 + 一长串提示」会挤成两三行参差的形状。 */
+@media (max-width: 640px) {
+  .votes__q {
+    flex-basis: 100%;
+    margin-right: 0;
+  }
+  .votes__thanks {
+    flex-basis: 100%;
+    font-size: 11.5px;
+  }
+}
 
 /* 雷达 */
 .radar {
