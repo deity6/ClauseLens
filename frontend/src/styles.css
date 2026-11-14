@@ -1628,6 +1628,93 @@ code {
   color: var(--ink-3);
 }
 
+/* 原文区标题右侧的透镜凹槽（GlassLens 默认就坐在槽心）。
+   槽是布局的一部分：标题块多高它就在旁边；球被拖走后留下一个空槽，点它叫回来。 */
+.rsec__head--lens {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.rsec__title {
+  display: grid;
+  gap: 6px;
+}
+.lensdock {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: -6px;
+}
+.lensdock__slot {
+  position: relative;
+  width: 124px;
+  height: 124px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--ink) 13%, transparent);
+  background: radial-gradient(closest-side, transparent 58%, color-mix(in srgb, var(--ink) 4%, transparent));
+  cursor: pointer;
+  transition: border-color var(--t-state) var(--e-out);
+}
+.lensdock__slot::before,
+.lensdock__slot::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: color-mix(in srgb, var(--ink) 15%, transparent);
+  transform: translate(-50%, -50%);
+}
+.lensdock__slot::before {
+  width: 20px;
+  height: 1px;
+}
+.lensdock__slot::after {
+  width: 1px;
+  height: 20px;
+}
+.lensdock__slot:hover {
+  border-color: color-mix(in srgb, var(--ink) 26%, transparent);
+}
+.lensdock__slot:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+.lensdock__cap {
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.lensdock__hint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  opacity: 0;
+  transition: opacity var(--t-state) var(--e-out);
+  pointer-events: none;
+}
+.lensdock__slot[data-taken="1"] .lensdock__hint {
+  opacity: 1;
+}
+.lensdock__slot[data-taken="1"]::before,
+.lensdock__slot[data-taken="1"]::after {
+  opacity: 0;
+}
+@media (max-width: 640px) {
+  .rsec__head--lens {
+    gap: 10px;
+  }
+  .lensdock__cap {
+    display: none;
+  }
+}
+
 /* 原文阅读器 */
 .reader {
   border: 1px solid var(--line-2);

@@ -58,6 +58,7 @@ export default function Result({ result, taxonomy, offline, onAgain }) {
   const [focus, setFocus] = useState(null);
   const [readerOpen, setReaderOpen] = useState(false);
   const jumpSeq = useRef(0);
+  const lensDock = useRef(null); // 「05 · SOURCE」标题右边的透镜凹槽
   const [copied, setCopied] = useState(false);
   const { site, score, documents: docs, stats, jurisdiction, tosdr } = result;
   const domain = site.domain;
@@ -85,6 +86,9 @@ export default function Result({ result, taxonomy, offline, onAgain }) {
     setReaderOpen(true);
     setFocus({ doc, start, end, seq: ++jumpSeq.current });
   };
+
+  // 点凹槽 = 把透镜叫回来（GlassLens 监听这个事件，清掉存档、回到 dock）
+  const recallLens = () => dispatchEvent(new CustomEvent("cl:lens:home"));
 
   const share = async () => {
     const url = `${location.origin}${location.pathname}?q=${encodeURIComponent(result.query?.input || domain)}`;
@@ -195,11 +199,28 @@ export default function Result({ result, taxonomy, offline, onAgain }) {
 
       {result.texts && (
         <section className="rsec" id="reader">
-          <header className="rsec__head">
-            <span className="meta">05 · SOURCE</span>
-            <h2>原文</h2>
+          {/* 透镜的凹槽：球默认就坐在这儿（GlassLens 用视口坐标对到这个槽的中心），
+              被拖走之后点它可以叫回来。槽是标题行的一部分，所以它跟着页面滚。 */}
+          <header className="rsec__head rsec__head--lens">
+            <div className="rsec__title">
+              <span className="meta">05 · SOURCE</span>
+              <h2>原文</h2>
+            </div>
+            <div className="lensdock">
+              <span className="lensdock__cap meta">拖到条款上看翻译</span>
+              <button
+                type="button"
+                className="lensdock__slot"
+                ref={lensDock}
+                onClick={recallLens}
+                aria-label="把透镜放回原位"
+                title="把透镜放回原位"
+              >
+                <span className="lensdock__hint">点我回位</span>
+              </button>
+            </div>
           </header>
-          <Reader docs={docs} texts={result.texts} tags={result.tags} taxonomy={taxonomy} focus={focus} open={readerOpen} setOpen={setReaderOpen} />
+          <Reader docs={docs} texts={result.texts} tags={result.tags} taxonomy={taxonomy} focus={focus} open={readerOpen} setOpen={setReaderOpen} dockRef={lensDock} />
         </section>
       )}
 

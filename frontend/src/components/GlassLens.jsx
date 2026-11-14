@@ -3,61 +3,60 @@ import { createPortal } from "react-dom";
 import { useReducedMotion } from "motion/react";
 import "./GlassLens.css";
 
-/* ── 玻璃透镜 ──────────────────────────────────────────────────────────────
-   观感来自 Bencho 的 GlassBubble（MIT，glass lens.txt）：中间轻微放大、边缘更硬、
-   上缘吃光、最边缘裂开一条彩色、底下压一片软影。
+/* ── 玻璃透镜 v3 ─────────────────────────────────────────────────────────────
+   观感还是那颗玻璃球（高光、棱镜边、软影、能拖），但三件事换了实现：
 
-   那边把整页拍成纹理走 WebGL SDF（「边缘像素沿法线往外取样」）。这里底下是**活的
-   DOM 文本**——要跟着滚动、跟着换文档、还能认出 .hl，所以换个稳的做法：
+   ① 位置：层的坐标是**视口坐标**（position: fixed）。默认坐在「05 · SOURCE」标题
+      右侧的 .lensdock 里；dock 不在视口里，整颗球收起来 —— 不再被「夹」到视口
+      右下角（v2 的 place() 把 y clamp 进 innerHeight，于是结果页一进来就贴在
+      右下角）。用户拖走之后它变成屏幕上的放大镜，位置写 localStorage，Home /
+      点 dock 回位。
+   ② 光学：圆心是一块**真透明的洞** —— 底下就是活的页面（含原位翻译层），不缩放、
+      不模糊、不叠克隆；只有 66%–100% 半径那一圈用两层克隆做「边缘折射」。
+      v2 的球心是 1.7× 克隆铺白底 + backdrop-filter，整颗糊成毛玻璃，翻译根本
+      看不见；这版中心清清楚楚，「只有小边缘发散」。
+   ③ 跟随：页面滚动 / 正文框内部滚动 / 展开收起 / 换文档 / 改尺寸，都先重量几何
+      再重画，所以条款一条条往下翻时，球里的内容就是此刻压着的那一段。
+      中心是活 DOM，天然不会停在上一段。
 
-     · 球是一个 absolute 的圆，挂在一层 body 级的 overflow:visible 定位层上（portal），
-       坐标是**页面坐标**：它既能在阅读器面板里，也能被拖到面板外的空白处；页面滚动时
-       球跟着文档走，不用任何滚动补偿；
-     · 放大不是 shader：圆心压在 .reader__body 上时，把正文深拷贝进裁剪圆，按圆心对齐
-       后 scale 到 1.7，拖动中只改克隆层的 translate；
-     · 边缘弯折：中心 1.7、往外 1.42 / 1.16 三层克隆，各露在自己那一环上。贴边处的字被
-       「压回去」，看上去就是沿法线向内收——那边靠 SDF 法线，这里靠三层倍率差；
-     · 色散 / 棱镜：错位的红、青细环 + 一层 conic 光谱，mix-blend-mode: screen，
-       全部裁在球里；
-     · 球跨过面板边缘时按最近的那条边轻微压扁、垂直方向拉长（弹簧跟随），像一颗玻璃球
-       挤进／挤出画框。
+   命中 mark.hl 时：边缘色散升起来；正文那条的原字变透明，同一位置由 canvas 在原位
+   画成大白话译文（不参与排版、不动行高）。译文画布见下方 effect —— 颜色从可读中性
+   色渐变到语义色（v2 从纯白起步，纸底上等于看不见），字号先做适配、必要时往下多占
+   一两行，不再被原句 bbox 裁掉。
 
-   命中高亮（mark.hl）时，除了含义卡，还会在该句的**行盒**上盖一层 canvas：原句的字符
-   先被打散成噪声，再逐字重排成语义色的一句话（explain_zh），最后淡出。canvas 只覆盖
-   那几行高亮，绝对定位、pointer-events:none，**不动任何正文排版**；透镜移开后整段效果
-   再停留 HOLD_MS 才消散（动画保护）。
+   性能契约：拖动只写 transform；克隆每种内容只做一次（内容变了才重建）；命中检测
+   60ms 节流；球收起时停掉监听。 */
 
-   性能契约：拖动中只写 transform；克隆每种内容只做一次；命中检测节流到 60ms；
-   阅读器收起时它还在（位置照旧），组件卸载时克隆与监听一起消失。 */
-
-const D = 112; // 球径：正好卡在「05 · SOURCE」上下两条发丝线之间
-// 一枚球面透镜的放大率从心到边是连续衰减的。三层克隆逼近这条曲线：
-// 中心 1.7（看得清字），往外 1.42、1.16 —— 每层只露在自己的环上（见 CSS 的 .glens__band）。
-const LAYERS = [{ mag: 1.7 }, { mag: 1.52 }, { mag: 1.36 }];
+const D = 112; // 球径：正好卡进「05 · SOURCE」上下两条发丝线之间
+const CORE = 0.66; // 中心透明区的半径占比；再往外才是折射环（见 CSS 的 mask）
+// 边缘两层克隆：越靠边折得越狠。中心 66% 以内不参与，直接看穿。
+const RINGS = [{ mag: 1.16 }, { mag: 1.42 }];
 const KEY_STEP = 10; // 方向键步长
-const PROBE_MS = 60; // 命中检测节流（每帧 elementFromPoint 会让拖动掉帧）
+const PROBE_MS = 60; // 命中检测节流（每帧 getClientRects 会拖慢滚动）
 const EDGE_PAD = 10; // 不贴死视口边
-const HOLD_MS = 2500; // 透镜移开后，译文与 ASCII 过渡再停 2.5 秒（用户说这个时长够了）
-const STORE_KEY = "cl:lens"; // 透镜落点（页面坐标），刷新/切主题/开合面板都不重置
-const CARD_W = 300; // 含义卡宽度（与 CSS 对齐）
-const CARD_GAP = 12;
+const HOLD_MS = 2400; // 透镜移开后，译文再停留 2.4 秒才消散（动画保护）
+const STORE_KEY = "cl:lens.v3"; // 只存用户拖过之后的视口坐标；没拖过就跟着 dock
 
 // 极性的一句话：bad → 对你不利
 const VERDICT = {
   bad: "对你不利：这段多半让你吃亏",
   good: "对你有利：这段偏向保护你",
   warn: "需要留意：这段有条件或例外",
-  neutral: "一般说明：这段只是把规则写清楚",
+  neutral: "一般说明：这段只是把规则讲清楚",
   focus: "你刚从标签跳到这里",
 };
 
-// 语义色只在这个效果里出现（透镜内部与译文卡），不进页面其它地方
+// 语义色只在这个效果里出现（透镜边缘、原位译文），不进页面其它地方
 const PALETTE = {
-  light: { bad: "#c2412d", good: "#2f7d5b", warn: "#b7791f", neutral: "#6b6a64", focus: "#43423d" },
-  geek: { bad: "#ff6b6b", good: "#5ef08a", warn: "#ffc857", neutral: "#c9c9c9", focus: "#ffffff" },
+  light: { bad: "#c2412d", good: "#2f7d5b", warn: "#b7791f", neutral: "#5f5c55", focus: "#43423d" },
+  geek: { bad: "#ff6b6b", good: "#5ef08a", warn: "#ffc857", neutral: "#d0d0d0", focus: "#ffffff" },
 };
+// 译文起点色：可读的中性灰（浅色纸底 / 深色点阵底各一套）。v2 从 #ffffff 起步，
+// 纸底上前面几个字直接消失 —— 这就是「浅色渲染有问题」的来源。
+const MUTED = { light: "#57544c", geek: "#dcdcdc" };
 const isGeek = () => document.documentElement.dataset.theme === "geek";
 const palette = () => PALETTE[isGeek() ? "geek" : "light"];
+const muted = () => MUTED[isGeek() ? "geek" : "light"];
 
 const clamp = (v, a, b) => (b < a ? a : Math.min(b, Math.max(a, v)));
 const hex = (s) => {
@@ -69,89 +68,94 @@ const mix = (a, b, t) => {
   const y = hex(b);
   return `rgb(${Math.round(x[0] + (y[0] - x[0]) * t)},${Math.round(x[1] + (y[1] - x[1]) * t)},${Math.round(x[2] + (y[2] - x[2]) * t)})`;
 };
+const union = (rects) =>
+  rects.reduce(
+    (b, r) => ({
+      left: Math.min(b.left, r.left),
+      top: Math.min(b.top, r.top),
+      right: Math.max(b.right, r.left + r.width),
+      bottom: Math.max(b.bottom, r.top + r.height),
+    }),
+    { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity }
+  );
 
 /**
  * 挂在 Reader 里（DOM 上是一层 portal 到 body 的定位层）。
- * @param anchorRef  阅读器根节点：默认落点、压扁边界都用它量
- * @param bodyRef    .reader__body：被放大的那份原文
+ * @param anchorRef  阅读器根节点：判断「原文区还在不在视口里」
+ * @param bodyRef    .reader__body：边缘折射要克隆的那份原文
+ * @param dockRef    「05 · SOURCE」标题右边的凹槽：默认落点就是它的中心
  * @param contentKey 当前文档 id：换文档时克隆要重建
  */
-export default function GlassLens({ anchorRef, bodyRef, contentKey }) {
+export default function GlassLens({ anchorRef, bodyRef, dockRef, contentKey }) {
   const reduce = useReducedMotion();
   const layerRef = useRef(null);
   const ballRef = useRef(null);
-  const mags = useRef([]); // 三张放大层，每张一份同样的克隆
+  const mags = useRef([]); // 边缘折射的两层克隆
 
-  const pos = useRef({ x: 0, y: 0 }); // 页面坐标（左上角）
-  const to = useRef({ x: 0, y: 0 });
-  const vel = useRef({ x: 0, y: 0 });
-  const scl = useRef({ x: 1, y: 1, tx: 1, ty: 1, vx: 0, vy: 0 });
-  const geo = useRef(null); // {bodyLeft, bodyTop, scrollTop, width} —— 全是页面坐标
+  const pos = useRef({ x: 0, y: 0 }); // 视口坐标（球左上角）
+  const geo = useRef(null); // {bodyLeft, bodyTop, scrollTop, width} —— 全是视口坐标
+  const moved = useRef(false); // 用户拿走过：之后按屏幕坐标待着，不再跟 dock
   const drag = useRef(null);
   const raf = useRef(0);
   const cloneKey = useRef("");
+  const dirty = useRef(true); // 正文 DOM 变了（MutationObserver 置位）
   const lastProbe = useRef(0);
   const hitKey = useRef("");
   const holdTimer = useRef(0);
-  const anchorRect = useRef(null);
-  const placed = useRef(false);
-  const moved = useRef(false); // 用户自己拖过/移过之后，就不再自动摆位 // 落点只算一次（要么用存档，要么用面板上方的默认位）
 
-  const [hit, setHit] = useState(null); // {pol, labels, explain, quote, rects, key}
+  const [hit, setHit] = useState(null); // {pol, labels, explain, quote, key, el, idx}
   const [dragging, setDragging] = useState(false);
   const [over, setOver] = useState(false);
+  const [shown, setShown] = useState(false);
 
-  /* ── 量几何：正文在**页面坐标**里的位置（滚动不影响它，所以只在布局变时量） ── */
+  /* ── 量几何：正文框此刻在视口里的位置（fixed 坐标，滚动时 rect.top 会变 → 每次都重量） ── */
   const measure = useCallback(() => {
     const body = bodyRef?.current;
-    const a = anchorRef?.current;
-    if (a) {
-      const r = a.getBoundingClientRect();
-      anchorRect.current = { left: r.left + scrollX, top: r.top + scrollY, right: r.right + scrollX, bottom: r.bottom + scrollY };
-    }
     if (!body) {
       geo.current = null;
       return null;
     }
     const r = body.getBoundingClientRect();
     geo.current = {
-      bodyLeft: r.left + scrollX,
-      bodyTop: r.top + scrollY,
+      bodyLeft: r.left,
+      bodyTop: r.top,
       scrollTop: body.scrollTop,
       width: body.clientWidth,
     };
     return geo.current;
-  }, [bodyRef, anchorRef]);
+  }, [bodyRef]);
 
-  /* ── 一帧：球到位（平移 + 挤压），克隆层把「圆心那一块内容」钉回圆心 ─────── */
+  /* ── 一帧：球到位；两层克隆把「圆心压着的那一点内容」钉回圆心 ─────────────────
+     中心那 66% 不画任何克隆（CSS mask 挡住），所以底下永远是活的页面本身。 */
   const paint = useCallback(() => {
     const ball = ballRef.current;
     if (!ball) return;
     const p = pos.current;
-    const s = scl.current;
-    ball.style.transform = `translate3d(${p.x.toFixed(2)}px, ${p.y.toFixed(2)}px, 0)`;
+    ball.style.transform = `translate3d(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px, 0)`;
 
     const g = geo.current;
-    const layer = mags.current[0];
-    if (!g || !layer) return;
-    const cx = p.x + D / 2 - g.bodyLeft;
-    const cy = p.y + D / 2 - g.bodyTop + g.scrollTop;
+    if (!g) return;
     const half = D / 2;
-    for (let i = 0; i < LAYERS.length; i++) {
+    const cx = p.x + half - g.bodyLeft;
+    const cy = p.y + half - g.bodyTop + g.scrollTop;
+    for (let i = 0; i < RINGS.length; i++) {
       const el = mags.current[i];
       if (!el) continue;
-      const m = LAYERS[i].mag;
-      el.style.transform = `translate3d(${(half - m * cx).toFixed(2)}px, ${(half - m * cy).toFixed(2)}px, 0) scale(${m})`;
+      const m = RINGS[i].mag;
+      el.style.transform = `translate3d(${(half - m * cx).toFixed(1)}px, ${(half - m * cy).toFixed(1)}px, 0) scale(${m})`;
     }
   }, []);
 
-  /* ── 克隆：只做一次。key 里带上「哪份文档 / 正文多宽 / 多少字」，变了才重建 ── */
+  /* ── 克隆（只给边缘环用）：key 里带文档 / 宽度 / 高度 / 字数，变了才重建 ──────── */
   const buildClone = useCallback(() => {
     const body = bodyRef?.current;
     const host = mags.current[0];
     if (!body || !host || reduce) return;
-    const key = `${contentKey}|${body.clientWidth}|${body.childElementCount}|${body.textContent.length}`;
-    if (cloneKey.current === key && host.firstElementChild) return;
+    const key = `${contentKey}|${body.clientWidth}|${body.scrollHeight}|${body.childElementCount}|${body.textContent.length}`;
+    if (cloneKey.current === key && host.firstElementChild) {
+      dirty.current = false;
+      return;
+    }
 
     const w = body.clientWidth;
     const mk = () => {
@@ -161,7 +165,12 @@ export default function GlassLens({ anchorRef, bodyRef, contentKey }) {
       c.removeAttribute("aria-label");
       c.setAttribute("aria-hidden", "true");
       c.querySelectorAll(".is-flash").forEach((el) => el.classList.remove("is-flash"));
-      // 克隆不是滚动容器：铺到底，靠 translate 对准（.reader__body 的字体/行高/内边距照旧生效）
+      // 命中时那条原字是透明的；克隆里要还原成原文 —— 边缘环该透着「原来的字」，
+      // 中心那圈才是译文（否则环上会缺一段看起来像漏字）
+      c.querySelectorAll(".is-glens-hidden").forEach((el) => el.classList.remove("is-glens-hidden"));
+      // 原位译文画布也在正文里，克隆时剔掉一份，不然边缘环里会多出一块重复的译文
+      c.querySelectorAll(".glens__fx").forEach((el) => el.remove());
+      // 克隆不是滚动容器：铺到底，靠 translate 对准（字体/行高/内边距照旧生效）
       c.style.width = `${w}px`;
       c.style.height = "auto";
       c.style.maxHeight = "none";
@@ -169,57 +178,48 @@ export default function GlassLens({ anchorRef, bodyRef, contentKey }) {
       c.style.margin = "0";
       return c;
     };
-    for (let i = 0; i < LAYERS.length; i++) if (mags.current[i]) mags.current[i].replaceChildren(mk());
+    for (let i = 0; i < RINGS.length; i++) if (mags.current[i]) mags.current[i].replaceChildren(mk());
     cloneKey.current = key;
-    // 有了克隆，球里就是「一块被折射过的画面」，底子要挡住背后的原文字——
-    // 否则放大后的字会和背后没放大的字叠成双影（用 data 属性而不是 className：
-    // React 管着 className，重渲染会把 class 覆盖掉，data-* 不会被碰）。
-    if (ballRef.current) ballRef.current.dataset.mag = "1";
+    dirty.current = false;
   }, [bodyRef, contentKey, reduce]);
 
-  /* ── 命中检测：圆心底下是不是 mark.hl / 是不是正文 ─────────────────────── */
+  /* ── 命中检测：透镜圆和 mark.hl 的行盒求交，取离圆心最近的那条 ──────────────
+     <mark> 是 inline，bbox 一半是行间空隙，所以不用 elementFromPoint。 */
   const probe = useCallback(() => {
     const body = bodyRef?.current;
-    /* 圆心直接用球的实际屏幕位置算 —— 不信 pos 与页面坐标的换算，
-       portal + fixed 的层里那套换算踩过太多次坑。 */
     const ballEl = ballRef.current;
-    const br = ballEl ? ballEl.getBoundingClientRect() : null;
-    const cx = br ? br.left + br.width / 2 : pos.current.x + D / 2;
-    const cy = br ? br.top + br.height / 2 : pos.current.y + D / 2;
-    // 球滚出视口了：什么都别判
+    if (!body || !ballEl) return;
+    const br = ballEl.getBoundingClientRect();
+    const cx = br.left + br.width / 2;
+    const cy = br.top + br.height / 2;
+    // 球在视口外：什么都别判
     if (cx < 0 || cy < 0 || cx > innerWidth || cy > innerHeight) return;
 
     let mark = null;
     let onBody = false;
-    /* 用几何判定，不用 elementsFromPoint：<mark> 是 inline，bbox 里有一半是行间空隙，
-       点上去经常命中父元素（实测圆心落在 mark 的 bbox 内却返回 .reader__body）。
-       这里直接遍历每条高亮的每个行盒，看圆心落不落在里面。 */
-    if (body) {
-      /* 「照到」而不是「圆心压住」：只要透镜的圆和某个行盒相交就算命中，
-         取离圆心最近的那条。112px 的球压在字上，圆心常常落在行间空隙里。 */
-      const R = D / 2 - 6;
-      let best = Infinity;
-      for (const m of body.querySelectorAll("mark.hl")) {
-        for (const r of m.getClientRects()) {
-          if (r.width < 2 || r.height < 2) continue;
-          const nx = clamp(cx, r.left, r.right);
-          const ny = clamp(cy, r.top, r.bottom);
-          const dist = Math.hypot(cx - nx, cy - ny);
-          if (dist <= R && dist < best) {
-            best = dist;
-            mark = m;
-          }
+    const R = D / 2 - 6;
+    let best = Infinity;
+    for (const m of body.querySelectorAll("mark.hl")) {
+      for (const r of m.getClientRects()) {
+        if (r.width < 2 || r.height < 2) continue;
+        const nx = clamp(cx, r.left, r.right);
+        const ny = clamp(cy, r.top, r.bottom);
+        const dist = Math.hypot(cx - nx, cy - ny);
+        if (dist <= R && dist < best) {
+          best = dist;
+          mark = m;
         }
       }
-      if (!mark) {
-        const br = body.getBoundingClientRect();
-        const nx = clamp(cx, br.left, br.right);
-        const ny = clamp(cy, br.top, br.bottom);
-        onBody = Math.hypot(cx - nx, cy - ny) <= R;
-      } else onBody = true;
     }
+    if (!mark) {
+      const r = body.getBoundingClientRect();
+      const nx = clamp(cx, r.left, r.right);
+      const ny = clamp(cy, r.top, r.bottom);
+      onBody = Math.hypot(cx - nx, cy - ny) <= R;
+    } else onBody = true;
+
     setOver((v) => (v === onBody ? v : onBody));
-    if (ballRef.current) ballRef.current.dataset.hit = mark ? "1" : "0";
+    if (ballEl) ballEl.dataset.hit = mark ? "1" : "0";
 
     if (mark) {
       if (holdTimer.current) {
@@ -234,20 +234,12 @@ export default function GlassLens({ anchorRef, bodyRef, contentKey }) {
       const explain = (mark.dataset.explain || "").trim();
       const raw = (mark.textContent || "").replace(/\s+/g, " ").trim();
       const quote = raw.length > 60 ? `${raw.slice(0, 60)}…` : raw;
-      const rects = [...mark.getClientRects()]
-        .filter((r) => r.width > 2 && r.height > 2)
-        .map((r) => ({ left: r.left + scrollX, top: r.top + scrollY, width: r.width, height: r.height }));
-      if (!rects.length) return;
-      const bbox = rects.reduce(
-        (b, r) => ({ left: Math.min(b.left, r.left), top: Math.min(b.top, r.top), right: Math.max(b.right, r.left + r.width), bottom: Math.max(b.bottom, r.top + r.height) }),
-        { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity }
-      );
-      const cardX = clamp(bbox.left, scrollX + 12, scrollX + innerWidth - CARD_W - 12);
-      const cardY = bbox.bottom + CARD_GAP + 150 > scrollY + innerHeight - 12 ? Math.max(scrollY + 12, bbox.top - 168) : bbox.bottom + CARD_GAP;
-      const key = `${pol}|${explain}|${quote}|${Math.round(bbox.left)}|${Math.round(bbox.top)}`;
+      const idx = [...body.querySelectorAll("mark.hl")].indexOf(mark);
+      // key 不含位置：同一条原文里挪动透镜不该重建画布（滚动时也不会一直闪）
+      const key = `${pol}|${explain}|${quote}|${idx}`;
       if (key !== hitKey.current) {
         hitKey.current = key;
-        setHit({ pol, labels, explain, quote, rects, card: { x: cardX, y: cardY }, key, el: mark, idx: [...body.querySelectorAll("mark.hl")].indexOf(mark) });
+        setHit({ pol, labels, explain, quote, key, el: mark, idx });
       }
       return;
     }
@@ -262,232 +254,139 @@ export default function GlassLens({ anchorRef, bodyRef, contentKey }) {
     }
   }, [bodyRef]);
 
-  /* ── 挤压：球跨过阅读器面板的边时，按最近那条边压扁 / 垂直拉长 ─────────── */
-  const deform = useCallback(() => {
-    // 用户要求去掉「压扁 / 拉长」的形变：玻璃球永远是一个正圆
-    return { tx: 1, ty: 1 };
-  }, []);
-
-  /* ── spring：跟手（k 大、阻尼小）→ settle 就停 rAF ──────────────────────
-     frames 不是毫秒：dt 是「过了几个 1/60 秒」，阻尼取 dt 次方，掉帧时衰减一致。 */
-  const kick = useCallback(() => {
-    if (raf.current) return;
-    let prev = 0;
-    const tick = (t) => {
-      const dt = prev ? clamp((t - prev) / 16.67, 0, 2.5) : 1;
-      prev = t;
-      const p = pos.current;
-      const q = to.current;
-      const v = vel.current;
-
-      // 用户要求「不要阻尼、不要 Q 弹」：位置直接钉到目标，一帧到位
-      p.x = q.x;
-      p.y = q.y;
-      v.x = v.y = 0;
-
-      // 形变（跨面板边时的压扁/拉长）已按用户要求整套去掉：球始终是正圆
-      paint();
-      if (t - lastProbe.current >= PROBE_MS) {
-        lastProbe.current = t;
-        probe();
-      }
-
-      const moving = Math.abs(q.x - p.x) > 0.05 || Math.abs(q.y - p.y) > 0.05 || drag.current;
-      if (moving) raf.current = requestAnimationFrame(tick);
-      else {
-        p.x = q.x;
-        p.y = q.y;
-        paint();
-        raf.current = 0;
-        probe(); // 落定后再确认一次
-      }
-    };
-    raf.current = requestAnimationFrame(tick);
-  }, [paint, probe]);
-
-  /* ── 落点：存的是「相对阅读器面板左上角」的偏移（页面坐标） ──────────────
-     面板展开只会往下长，顶边不动，所以相对偏移在折叠/展开、切主题、刷新之间都稳定；
-     直接存页面坐标的话，刷新后（面板是收起的）会把球夹到文档末尾去。 */
-  const panelBase = useCallback(() => {
-    const a = anchorRef?.current;
-    if (!a) return null;
-    const r = a.getBoundingClientRect();
-    if (!r.width || !r.height) return null;
-    return { left: r.left + scrollX, top: r.top + scrollY, width: r.width, height: r.height };
-  }, [anchorRef]);
-
-  const save = useCallback(() => {
-    try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ rx: Math.round(pos.current.x), ry: Math.round(pos.current.y) }));
-    } catch {
-      /* 隐身模式：记不住就算了 */
+  /* ── 落点：默认坐在 dock 里；用户拖过就固定在屏幕上 ─────────────────────────
+     出现条件：没被拿走时，dock 必须在视口里（结果页顶部时它在屏幕外，球收起来；
+     v2 会把球 clamp 进视口，于是「一分析完就贴在右下角」——这轮的头号问题）。
+     被拿走之后它是一枚屏幕上的放大镜：只要原文这一节还在视口里就留着，往下读也在。 */
+  const relayout = useCallback(() => {
+    const dock = dockRef?.current;
+    const anchor = anchorRef?.current;
+    if (dock) {
+      // 空槽里那句「点我回位」只在球被拿走时出现
+      const take = moved.current ? "1" : "0";
+      if (dock.dataset.taken !== take) dock.dataset.taken = take;
     }
-  }, [panelBase]);
+    let show = false;
 
-  const home = useCallback(() => {
-    // 落在「05 · SOURCE 原文」那块：面板右上角往里一点，压在面板外的空白上
-    const b = panelBase();
-    return b
-      ? { x: b.left + b.width - D - 32, y: Math.max(0, b.top - D - 40) }
-      : { x: scrollX + innerWidth - D - 40, y: scrollY + 120 };
-  }, [panelBase]);
+    if (!moved.current) {
+      const dr = dock?.getBoundingClientRect();
+      show = !!dr && dr.width > 0 && dr.bottom > 48 && dr.top < innerHeight - 24;
+      if (show) {
+        pos.current = {
+          x: clamp(dr.left + dr.width / 2 - D / 2, EDGE_PAD, innerWidth - D - EDGE_PAD),
+          // 槽被滚到边上时球跟着贴边，但绝不允许半颗挂在视口外
+          y: clamp(dr.top + dr.height / 2 - D / 2, EDGE_PAD, innerHeight - D - EDGE_PAD),
+        };
+      }
+    } else {
+      const sr = (dock?.closest(".rsec") || anchor)?.getBoundingClientRect();
+      show = !!sr && sr.bottom > 120 && sr.top < innerHeight - 100;
+      pos.current = {
+        x: clamp(pos.current.x, EDGE_PAD, innerWidth - D - EDGE_PAD),
+        y: clamp(pos.current.y, EDGE_PAD, innerHeight - D - EDGE_PAD),
+      };
+    }
 
-  /* 默认落点只在第一次落一次（存档优先） */
-  const placeIfNeeded = useCallback(() => {
-    if (placed.current) return false;
+    setShown((prev) => (prev === show ? prev : show));
+    if (!show && hitKey.current) {
+      hitKey.current = "";
+      setHit(null);
+    }
+    return show;
+  }, [anchorRef, dockRef]);
+
+  /* ── 一次同步：量 → 摆 → 重建（需要时）→ 画 → 命中 ─────────────────────── */
+  const sync = useCallback(
+    (now = false) => {
+      const run = () => {
+        raf.current = 0;
+        measure();
+        const show = relayout();
+        if (!show) return;
+        if (dirty.current) buildClone();
+        paint();
+        const t = performance.now();
+        if (now || t - lastProbe.current >= PROBE_MS) {
+          lastProbe.current = t;
+          probe();
+        }
+      };
+      if (now) {
+        if (raf.current) cancelAnimationFrame(raf.current);
+        raf.current = 0;
+        run();
+        return;
+      }
+      if (!raf.current) raf.current = requestAnimationFrame(run);
+    },
+    [measure, relayout, buildClone, paint, probe]
+  );
+
+  /* ── 初次落位：有存档（用户拖过）就用存档，否则跟 dock ─────────────────── */
+  useLayoutEffect(() => {
     let stored = null;
     try {
       stored = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
     } catch {
       stored = null;
     }
-    // 面板还没展开时用「05 · SOURCE 原文」这一节本身当锚点，保证默认落点就在那一块
-    const b = panelBase();
-    let sec = null;
-    const secEl = document.getElementById("reader") || document.querySelector(".rsec#reader");
-    if (secEl) {
-      const r = secEl.getBoundingClientRect();
-      sec = { left: r.left + scrollX, top: r.top + scrollY, width: r.width, height: r.height };
+    const ok =
+      stored &&
+      Number.isFinite(stored.x) &&
+      Number.isFinite(stored.y) &&
+      stored.x > -D * 0.5 &&
+      stored.x < innerWidth &&
+      stored.y > -D * 0.5 &&
+      stored.y < innerHeight;
+    if (ok) {
+      moved.current = true;
+      pos.current = { x: stored.x, y: stored.y };
     }
-    const base = b || sec;
-    /* 视口坐标：区块在屏幕上的位置 → 球贴在区块右上、正好卡在两条发丝线之间的空档里 */
-    const def = base
-      ? { x: base.left + base.width - D - 32, y: Math.max(0, base.top - D - 10) }
-      : { x: scrollX + innerWidth - D - 40, y: scrollY + 140 };
-    const x = stored && Number.isFinite(stored.rx) && Number.isFinite(stored.ry) ? stored.rx : def.x;
-    const y = stored && Number.isFinite(stored.rx) && Number.isFinite(stored.ry) ? stored.ry : def.y;
-    const maxX = Math.max(EDGE_PAD, document.documentElement.scrollWidth - D - EDGE_PAD);
-    const maxY = Math.max(EDGE_PAD, document.documentElement.scrollHeight - D - EDGE_PAD);
-    pos.current = { x: clamp(x, EDGE_PAD, maxX), y: clamp(y, EDGE_PAD, maxY) };
-    to.current = { ...pos.current };
-    placed.current = true;
-    return true;
-  }, [panelBase]);
-
-  /* ── 自动落位：原文区展开 / 文档切换导致高度变化时，把球重新摆到区块右侧 ──
-     用户自己拖过之后就不再自动动它。 */
-  useEffect(() => {
-    const sec = document.getElementById("reader");
-    if (!sec) return undefined;
-    const place = () => {
-      if (moved.current) return;
-      const r = sec.getBoundingClientRect();
-      /* x 贴区块右边、y 放区块上方 —— 但要保证「此刻在屏幕里」：
-         区块很高（展开的原文）时，区块顶可能已经在视口外，球就顺势落到视口上沿附近。 */
-      const x = clamp(r.right + scrollX - D - 32, scrollX + EDGE_PAD, scrollX + innerWidth - D - EDGE_PAD);
-      const y = clamp(r.top + scrollY - D - 10, scrollY + 96, scrollY + innerHeight - D - EDGE_PAD);
-      pos.current = { x, y };
-      to.current = { ...pos.current };
-      placed.current = true;
-      paint();
-      probe();
-    };
-    place();
-    /* 没被用户拖过时，随页面滚动一直贴着区块 —— 不会出现「球停在结果页顶部」 */
-    let ticking = false;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        ticking = false;
-        place();
-      });
-    };
-    addEventListener("scroll", onScroll, { passive: true });
-    const ro = new ResizeObserver(place);
-    ro.observe(sec);
-    const mo = new MutationObserver(place);
-    mo.observe(sec, { attributes: true, attributeFilter: ["class"] });
-    return () => {
-      removeEventListener("scroll", onScroll);
-      ro.disconnect();
-      mo.disconnect();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paint, probe]);
-
-  useLayoutEffect(() => {
-    placeIfNeeded(); // 有存档就用存档，没有就放到面板上方的空白处
-    if (!placed.current && ballRef.current) ballRef.current.style.visibility = "hidden";
-    vel.current = { x: 0, y: 0 };
     measure();
+    relayout();
+    buildClone();
     paint();
     probe();
-  }, [measure, paint, placeIfNeeded, probe]);
+  }, [measure, relayout, buildClone, paint, probe]);
 
-  // 面板还没量出来（刚挂载 / 结果页进场动画里）时，逐帧再试；放好之后才让它露面
+  /* ── 滚动 / 改尺寸 / 面板高度动画：都先重量再画 ─────────────────────────────
+     scroll 不冒泡，但捕获阶段能看到任何滚动容器（页面、.reader__body）；v2 只在
+     页面滚动时 paint 不 measure，所以球里的内容会停在上一段。 */
   useEffect(() => {
-    if (placed.current) return undefined;
-    let n = 0;
-    let id = 0;
-    const tick = () => {
-      if (placeIfNeeded()) {
-        if (ballRef.current) ballRef.current.style.visibility = "";
-        paint();
-        probe();
-        return;
-      }
-      if (++n < 180) id = requestAnimationFrame(tick);
-    };
-    id = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(id);
-  }, [paint, placeIfNeeded, probe]);
-
-  /* ── 布局/正文滚动变化：重量一次（页面滚动不用管，坐标是页面坐标） ─────── */
-  useEffect(() => {
-    const body = bodyRef?.current;
-    let queued = 0;
-    const sync = () => {
-      if (queued) return;
-      queued = requestAnimationFrame(() => {
-        queued = 0;
-        measure();
-        paint();
-        const now = performance.now();
-        if (now - lastProbe.current >= PROBE_MS) {
-          lastProbe.current = now;
-          probe();
-        }
-      });
-    };
-    body?.addEventListener("scroll", sync, { passive: true });
-    /* 页面滚动时透镜留在屏幕上不动（放大镜该有的行为）：页面坐标跟着加回滚动量，
-       再重画一次克隆 —— 这样「滚轮一动，透镜里的字就跟着换」。 */
-    let lastWinY = window.scrollY;
-    const onWinScroll = () => {
-      const dy = window.scrollY - lastWinY;
-      lastWinY = window.scrollY;
-      if (!dy) return;
-
-      paint();
-      const now = performance.now();
-      if (now - lastProbe.current >= PROBE_MS) {
-        lastProbe.current = now;
-        probe();
-      }
-    };
-    addEventListener("scroll", onWinScroll, { passive: true });
-    addEventListener("resize", sync);
-    const ro = typeof ResizeObserver === "function" ? new ResizeObserver(sync) : null;
-    if (body) ro?.observe(body);
+    const onScroll = () => sync();
+    addEventListener("scroll", onScroll, { capture: true, passive: true });
+    addEventListener("resize", onScroll);
+    const ro = typeof ResizeObserver === "function" ? new ResizeObserver(onScroll) : null;
+    if (bodyRef?.current) ro?.observe(bodyRef.current);
     if (anchorRef?.current) ro?.observe(anchorRef.current);
+    if (dockRef?.current) ro?.observe(dockRef.current);
+
+    // 正文 DOM 变了（换文档、跳转后新增高亮、主题相关的 class 变化）→ 下一次同步重建克隆
+    const mo =
+      typeof MutationObserver === "function"
+        ? new MutationObserver(() => {
+            dirty.current = true;
+            sync();
+          })
+        : null;
+    if (bodyRef?.current) mo?.observe(bodyRef.current, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
+
     return () => {
-      if (queued) cancelAnimationFrame(queued);
-      body?.removeEventListener("scroll", sync);
-      removeEventListener("scroll", onWinScroll);
-      removeEventListener("resize", sync);
+      removeEventListener("scroll", onScroll, { capture: true });
+      removeEventListener("resize", onScroll);
       ro?.disconnect();
+      mo?.disconnect();
+      if (raf.current) cancelAnimationFrame(raf.current);
     };
-  }, [anchorRef, bodyRef, measure, paint, probe]);
+  }, [sync, bodyRef, anchorRef, dockRef]);
 
-  // 换文档：正文换了，克隆跟着换，命中也要重判
+  // 换文档：正文换了，边缘克隆跟着换，命中也要重判
   useEffect(() => {
-    if (cloneKey.current) buildClone();
-    measure();
-    paint();
-    probe();
-  }, [contentKey, buildClone, measure, paint, probe]);
+    dirty.current = true;
+    sync(true);
+  }, [contentKey, sync]);
 
+  // 收起时清定时器
   useEffect(
     () => () => {
       cancelAnimationFrame(raf.current);
@@ -496,217 +395,236 @@ export default function GlassLens({ anchorRef, bodyRef, contentKey }) {
     []
   );
 
-  /* ── 译文卡逐字浮现 ───────────────────────────────────────────────────── */
+  /* ── 回位：Home 键 / 点 dock（Result 里那个凹槽派发事件） ──────────────────── */
+  const recall = useCallback(() => {
+    moved.current = false;
+    try {
+      localStorage.removeItem(STORE_KEY);
+    } catch {
+      /* 隐身模式：记不住就算了 */
+    }
+    sync(true);
+  }, [sync]);
 
-  /* ── 高亮句原位替换：canvas 覆盖那几行，把原句「拆成字符 → 重排成译文」 ─────
-     纯视觉：canvas 绝对定位、pointer-events:none，正文一个字符都不动、行高不变；
-     透镜移开后再停留 HOLD_MS 才淡出，原文自己回来。 */
   useEffect(() => {
-    if (!hit || reduce) return undefined;
-    const layer = layerRef.current;
+    const onHome = () => recall();
+    addEventListener("cl:lens:home", onHome);
+    return () => removeEventListener("cl:lens:home", onHome);
+  }, [recall]);
+
+  const save = useCallback(() => {
+    if (!moved.current) return;
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ x: Math.round(pos.current.x), y: Math.round(pos.current.y) }));
+    } catch {
+      /* 隐身模式：记不住就算了 */
+    }
+  }, []);
+
+  /* ── 原位译文：把命中的那条 mark 的字变透明（占位/行高不变），同一块位置用 canvas
+        逐字重排成大白话。译文比原句长是常态 —— 先缩字号，仍放不下就往下多占 1–2 行，
+        并把底衬铺出来（v2 被原句 bbox 裁掉，后半句直接没了）。 */
+  useEffect(() => {
+    if (!hit) return undefined;
     const body = bodyRef?.current;
-    if (!layer || !body) return undefined;
+    const el = hit?.el;
+    if (!body || !el || !el.isConnected) return undefined;
 
-    const bbox = hit.rects.reduce(
-      (b, r) => ({
-        left: Math.min(b.left, r.left),
-        top: Math.min(b.top, r.top),
-        right: Math.max(b.right, r.left + r.width),
-        bottom: Math.max(b.bottom, r.top + r.height),
-      }),
-      { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity }
-    );
-    const w = Math.ceil(bbox.right - bbox.left);
-    const h = Math.ceil(bbox.bottom - bbox.top);
-    if (w < 8 || h < 8) return undefined;
-
+    const rects = [...el.getClientRects()].filter((r) => r.width > 4 && r.height > 4);
+    if (!rects.length) return undefined;
+    const bbox = union(rects);
+    const br = body.getBoundingClientRect();
     const cs = getComputedStyle(body);
     const fontPx = parseFloat(cs.fontSize) || 15;
     const lineH = parseFloat(cs.lineHeight) || fontPx * 1.9;
+    const padR = parseFloat(cs.paddingRight) || 0;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const text = hit.explain || VERDICT[hit.pol] || "";
+    if (!text) return undefined;
+
+    // 内容坐标（挂在 .reader__body 里，跟正文一起滚）
+    const left = bbox.left - br.left + body.scrollLeft;
+    const top = bbox.top - br.top + body.scrollTop;
+    const bboxW = bbox.right - bbox.left;
+    const bboxH = bbox.bottom - bbox.top;
+    const availW = Math.max(160, body.clientWidth - left - padR);
+    const w = Math.min(availW, Math.max(bboxW, 320));
+    const maxH = Math.max(bboxH, lineH * 1.15) + lineH * 2; // 最多往下多占两行
+
+    // 字号适配：先在一块离屏 context 上试（真画布的高度要等排好版才知道）。
+    // 从原字号往下试，能整段塞进 maxH 就停；最小 58%，再放不下才截。
+    const probe = document.createElement("canvas").getContext("2d");
+    probe.textBaseline = "middle";
+    probe.textAlign = "left";
+    const fontOf = (k) => `${cs.fontWeight} ${fontPx * k}px ${cs.fontFamily}`;
+    let fitK = 0.58;
+    let lines = [];
+    for (const k of [1, 0.94, 0.88, 0.83, 0.78, 0.73, 0.68, 0.63, 0.58]) {
+      probe.font = fontOf(k);
+      const lh = lineH * k;
+      const rows = [];
+      let x = 0;
+      let row = "";
+      let clipped = false;
+      for (const ch of text) {
+        const cw = probe.measureText(ch).width;
+        if (x + cw > w) {
+          rows.push(row);
+          row = "";
+          x = 0;
+        }
+        if ((rows.length + 1) * lh > maxH) {
+          clipped = true;
+          break;
+        }
+        row += ch;
+        x += cw;
+      }
+      if (row) rows.push(row);
+      fitK = k;
+      lines = rows;
+      if (!clipped) break;
+    }
+    if (!lines.length) return undefined;
+    const fitLineH = lineH * fitK;
+    const textH = lines.length * fitLineH;
+    // 底衬至少盖住原句那一块（原字已经透明，留空会像丢字）；译文比原句短就居中
+    const plateH = Math.max(bboxH, textH + 4);
+    const y0 = (plateH - textH) / 2;
+
     const cv = document.createElement("canvas");
     cv.className = "glens__fx";
     cv.width = Math.round(w * dpr);
-    cv.height = Math.round(h * dpr);
-    /* 译文画布挂进正文容器（.reader__body）里，用「内容坐标」——
-       这样它和正文是同一套滚动：页面滚 / 面板内部滚，它都跟着字走，滚出视口就被裁掉。 */
-    const host = bodyRef?.current || document.body;
-    const hostRect = host.getBoundingClientRect();
-    const left = bbox.left - (hostRect.left + scrollX) + (host.scrollLeft || 0);
-    const top = bbox.top - (hostRect.top + scrollY) + (host.scrollTop || 0);
-    cv.style.cssText = `position:absolute;left:${Math.round(left)}px;top:${Math.round(top)}px;width:${w}px;height:${h}px;pointer-events:none;z-index:2`;
-    host.appendChild(cv);
-    // 原文让位：这条 mark 的字变透明（占位与行高不变），译文直接落在页面上，不铺黑底
-    if (hit.el) {
-      hit.el.classList.add("is-glens-hidden");
-      hit.el.style.color = "transparent";
-      hit.el.style.background = "transparent";
-    }
-    // 透镜里的放大层也换成译文：映射后的文字在棱镜内同样看得到
-    const palHit = palette();
-    const hitColor = palHit[hit.pol] || palHit.neutral;
-    for (let i = 0; i < LAYERS.length; i++) {
-      const mag = mags.current[i];
-      const m = mag && mag.querySelectorAll("mark.hl")[hit.idx];
-      if (m) {
-        m.textContent = hit.explain;
-        m.style.color = hitColor;
-        m.style.background = "transparent";
-      }
-    }
+    cv.height = Math.round(plateH * dpr);
+    cv.style.cssText = `position:absolute;left:${Math.round(left)}px;top:${Math.round(top)}px;width:${Math.round(w)}px;height:${Math.round(plateH)}px;pointer-events:none;z-index:2`;
+    body.appendChild(cv);
+
     const ctx = cv.getContext("2d");
     ctx.scale(dpr, dpr);
     ctx.textBaseline = "middle";
     ctx.textAlign = "left";
-    ctx.font = `${cs.fontWeight} ${fontPx}px ${cs.fontFamily}`;
 
-    const geek = isGeek();
+    // 底衬：纸色 + 左侧语义色条，让译文压在后面的行上也读得清
     const pal = palette();
     const target = pal[hit.pol] || pal.neutral;
-    const sheet = geek ? "#101010" : "#ffffff";
-    const noiseSrc = `${hit.quote || hit.explain || "条款透镜"}${hit.explain || ""}`.replace(/\s+/g, "");
-    const NOISE = "アカサタナハマ0110#%&/\\<>[]{}";
+    const geek = isGeek();
+    const sheet = geek ? "rgba(16,16,16,0.95)" : "rgba(255,255,255,0.96)";
+    const rule = target;
 
-    // 译文比原句长是常态。不能影响正文排版，所以只能「缩字」：先挑一档能整段塞进
-    // 原句 bbox 的字号（最宽到 100%，最小到 62%），再按这档字号排字。
-    const fontOf = (k) => `${cs.fontWeight} ${(fontPx * k).toFixed(2)}px ${cs.fontFamily}`;
-    let fitK = 0.62;
-    let fitLineH = lineH * 0.62;
-    for (const k of [1, 0.94, 0.88, 0.83, 0.78, 0.73, 0.68, 0.62]) {
-      ctx.font = fontOf(k);
-      let xx = 0;
-      let yy = (lineH * k) / 2;
-      for (const ch of hit.explain) {
-        const cw = ctx.measureText(ch).width;
-        if (xx + cw > w) {
-          xx = 0;
-          yy += lineH * k;
-        }
-        xx += cw;
-      }
-      if (yy + (lineH * k) / 2 <= h) {
-        fitK = k;
-        fitLineH = lineH * k;
-        break;
-      }
-    }
+    // 每个字一个槽位：先按字排好位置，再按时间逐个「电离 → 定形」
     ctx.font = fontOf(fitK);
-
-    const slots = [];
-    let x = 0;
-    let y = fitLineH / 2;
-    let clipped = false;
-    for (let i = 0; i < hit.explain.length; i++) {
-      const ch = hit.explain[i];
-      const cw = Math.max(1, ctx.measureText(ch).width);
-      if (x + cw > w) {
-        x = 0;
-        y += fitLineH;
+    const index = [];
+    for (let li = 0; li < lines.length; li++) {
+      let x = 14;
+      const y = y0 + li * fitLineH + fitLineH / 2 + 1;
+      for (const ch of lines[li]) {
+        const cw = ctx.measureText(ch).width;
+        index.push({ ch, w: cw, x, y });
+        x += cw;
       }
-      if (y + fitLineH / 2 > h) {
-        clipped = true;
-        break;
-      }
-      slots.push({ ch, x, y, w: cw });
-      x += cw;
     }
-    if (clipped && slots.length) {
-      const last = slots[slots.length - 1];
-      last.ch = "…";
-    }
-    if (!slots.length) return undefined;
+    const total = index.length;
 
+    const r = 9;
+    const drawPlate = () => {
+      ctx.clearRect(0, 0, w, plateH);
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(0, 0, w, plateH, r) : ctx.rect(0, 0, w, plateH);
+      ctx.fillStyle = sheet;
+      ctx.fill();
+      ctx.strokeStyle = geek ? "rgba(255,255,255,0.18)" : "rgba(23,22,20,0.10)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(0.5, 0.5, w - 1, plateH - 1, r) : ctx.rect(0.5, 0.5, w - 1, plateH - 1);
+      ctx.stroke();
+      // 左缘那条语义色
+      ctx.fillStyle = rule;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(0, 0, 3, plateH, [r, 0, 0, r]) : ctx.rect(0, 0, 3, plateH);
+      ctx.fill();
+    };
     const startedAt = performance.now();
+    const NOISE = "アカサタナハマ0110#%&/\\<>[]{}";
+    const noiseSrc = `${hit.quote || text}${text}`.replace(/\s+/g, "");
     let raf2 = 0;
     let dead = false;
 
     const draw = (now) => {
       const t = now - startedAt;
-      const appear = clamp(t / 180, 0, 1);
-      const resolve = clamp((t - 240) / 950, 0, 1);
-      const done = resolve * slots.length;
+      const appear = clamp(t / 160, 0, 1);
+      const resolve = clamp((t - 200) / 900, 0, 1);
+      const done = resolve * total;
       const flick = Math.floor(t / 70);
 
-      ctx.clearRect(0, 0, w, h);
-      // 不铺底色：原文由「隐藏那一条 mark」让位，译文直接落在页面上（滚动时不会露馅）
-      ctx.globalAlpha = 1;
+      ctx.save();
+      ctx.globalAlpha = appear;
+      drawPlate();
+      ctx.restore();
 
-      for (let i = 0; i < slots.length; i++) {
-        const s = slots[i];
+      ctx.font = fontOf(fitK);
+      for (let i = 0; i < index.length; i++) {
+        const s = index[i];
         const p = clamp(done - i, 0, 1);
         if (p >= 1) {
-          // 已重排：译文的字，颜色从白渐变到语义色
-          ctx.globalAlpha = 0.97;
-          ctx.fillStyle = mix("#ffffff", target, clamp(i / Math.max(6, slots.length - 1), 0, 1));
+          ctx.globalAlpha = appear;
+          ctx.fillStyle = mix(muted(), target, clamp(i / Math.max(6, total - 1), 0, 1));
           if (geek) {
             ctx.shadowColor = target;
-            ctx.shadowBlur = 9;
+            ctx.shadowBlur = 8;
           }
           ctx.fillText(s.ch, s.x, s.y);
           ctx.shadowBlur = 0;
         } else {
-          // 还没到：原句拆散后的字符 / 乱码
           const k = flick + i * 7;
           const ch = k % 4 === 0 ? NOISE[k % NOISE.length] : noiseSrc[(k * 31) % Math.max(1, noiseSrc.length)];
-          ctx.globalAlpha = 0.34 + 0.3 * (1 - p);
-          ctx.fillStyle = geek ? "#a8a8a8" : "#8a8a8a";
+          ctx.globalAlpha = 0.4 + 0.28 * (1 - p);
+          ctx.fillStyle = geek ? "#a8a8a8" : "#7c7873";
           ctx.fillText(ch, s.x, s.y);
         }
       }
       ctx.globalAlpha = 1;
       if (!dead) raf2 = requestAnimationFrame(draw);
     };
-    raf2 = requestAnimationFrame(draw);
+    // 减少动态效果时不跑逐字动画，但仍要给出译文（画一帧静止的就停）
+    if (reduce) {
+      dead = true;
+      draw(performance.now() + 8000);
+    } else raf2 = requestAnimationFrame(draw);
+
+    // 原字让位（占位与行高都不变）
+    el.classList.add("is-glens-hidden");
 
     return () => {
       dead = true;
       cancelAnimationFrame(raf2);
-      // 消散：淡出再摘掉，原文随即回来
-      cv.style.transition = "opacity 460ms ease";
+      cv.style.transition = "opacity 420ms ease";
       cv.style.opacity = "0";
-      setTimeout(() => cv.remove(), 500);
-      // 原文解除隐藏；克隆层里换回的原文由下一次 buildClone 重建
-      if (hit.el) {
-        hit.el.classList.remove("is-glens-hidden");
-        hit.el.style.color = "";
-        hit.el.style.background = "";
-      }
-      cloneKey.current = "";
+      setTimeout(() => cv.remove(), 460);
+      el.classList.remove("is-glens-hidden");
     };
   }, [hit, reduce, bodyRef]);
 
-  /* ── 指针：capture 起来拖，球只写 transform ─────────────────────────────── */
+  /* ── 指针：原生监听（球 portal 到 body，#root 之外，React 合成事件收不到） ── */
   const onPointerDown = (e) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
-    e.preventDefault(); // 拖动时别顺手选中文字 / 别让触屏滚页面
-    try {
-      // 拖拽不再抢焦点：焦点环是「方框」的元凶，键盘用户仍然可以 Tab 进来
-    } catch {}
-    moved.current = true; // 用户上手了，之后不再自动摆位
-    drag.current = {
-      id: e.pointerId,
-      dx: e.clientX + scrollX - pos.current.x,
-      dy: e.clientY + scrollY - pos.current.y,
-    };
+    e.preventDefault();
+    moved.current = true;
+    drag.current = { id: e.pointerId, dx: e.clientX - pos.current.x, dy: e.clientY - pos.current.y };
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {}
-    measure();
-    buildClone();
     setDragging(true);
-    paint();
+    sync(true);
   };
 
   const onPointerMove = (e) => {
     const d = drag.current;
     if (!d || e.pointerId !== d.id) return;
-    const maxX = scrollX + innerWidth - D - EDGE_PAD; // 拖的时候不出视口
-    const maxY = scrollY + innerHeight - D - EDGE_PAD;
-    to.current = {
-      x: clamp(e.clientX + scrollX - d.dx, scrollX + EDGE_PAD, maxX),
-      y: clamp(e.clientY + scrollY - d.dy, scrollY + EDGE_PAD, maxY),
+    pos.current = {
+      x: clamp(e.clientX - d.dx, EDGE_PAD, innerWidth - D - EDGE_PAD),
+      y: clamp(e.clientY - d.dy, EDGE_PAD, innerHeight - D - EDGE_PAD),
     };
-    kick();
+    sync();
   };
 
   const endDrag = (e) => {
@@ -719,10 +637,10 @@ export default function GlassLens({ anchorRef, bodyRef, contentKey }) {
     } catch {}
     setDragging(false);
     save();
-    kick();
+    sync(true);
   };
 
-  /* ── 键盘：方向键微调（Shift 加速），Home 回默认位 ─────────────────────── */
+  /* ── 键盘：方向键微调（Shift 加速），Home 回 dock ─────────────────────────── */
   const onKeyDown = (e) => {
     const step = KEY_STEP * (e.shiftKey ? 4 : 1);
     let dx = 0;
@@ -732,36 +650,22 @@ export default function GlassLens({ anchorRef, bodyRef, contentKey }) {
     else if (e.key === "ArrowUp") dy = -step;
     else if (e.key === "ArrowDown") dy = step;
     else if (e.key === "Home") {
-      const h = home();
-      to.current = { x: h.x, y: h.y };
-      measure();
-      buildClone();
-      kick();
-      setTimeout(save, 900);
       e.preventDefault();
+      recall();
       return;
     } else return;
     e.preventDefault();
-    measure();
-    buildClone();
-    to.current = {
-      x: clamp(to.current.x + dx, EDGE_PAD, innerWidth - D - EDGE_PAD),
-      y: clamp(to.current.y + dy, EDGE_PAD, innerHeight - D - EDGE_PAD),
+    moved.current = true;
+    pos.current = {
+      x: clamp(pos.current.x + dx, EDGE_PAD, innerWidth - D - EDGE_PAD),
+      y: clamp(pos.current.y + dy, EDGE_PAD, innerHeight - D - EDGE_PAD),
     };
-    kick();
-    setTimeout(save, 900);
+    sync(true);
+    setTimeout(save, 700);
   };
 
-  const onFocus = () => {
-    measure();
-    buildClone();
-    paint();
-  };
+  const onFocus = () => sync(true);
 
-  /* ── 指针：用**原生监听**绑在球上 ──────────────────────────────────────────
-     这颗球是 createPortal 到 document.body 的，在 #root 之外；React 19 的事件委托
-     只挂在根容器上，合成事件收不到（实测：原生 pointerdown 能收到，React 的 onPointerDown
-     一次都不触发，所以拖拽其实是死的）。这里自己 addEventListener，portal 与否都能拖。 */
   useEffect(() => {
     const el = ballRef.current;
     if (!el) return undefined;
@@ -782,52 +686,37 @@ export default function GlassLens({ anchorRef, bodyRef, contentKey }) {
   }, []);
 
   const label = hit
-    ? "玻璃透镜：正压在一句高亮条款上，原句已经就地换成了它的大白话解释。方向键微调，Home 回默认位置。"
-    : "玻璃透镜：把它拖到原文上会放大文字；压在高亮条款上时，那句话会就地换成它的解释。方向键微调，Home 回默认位置。";
-
+    ? "玻璃透镜：正压在一句高亮条款上，原句已经就地换成了它的大白话解释。方向键微调，Home 回原位。"
+    : "玻璃透镜：拖到条款上会放大并透出边缘折射；压在高亮条款上时，那句话会就地换成解释。方向键微调，Home 回原位。";
   const verdict = hit ? VERDICT[hit.pol] || VERDICT.neutral : "";
 
   const tree = (
-    <div className="glens-layer" ref={layerRef} style={{ "--glens-d": `${D}px` }}>
+    <div className="glens-layer" ref={layerRef} data-show={shown ? "1" : "0"} style={{ "--glens-d": `${D}px`, "--glens-core": `${CORE}` }}>
       <div
         ref={ballRef}
-        className={`glens__ball is-refracting${dragging ? " is-dragging" : ""}${over ? " is-over" : ""}`}
+        className={`glens__ball${dragging ? " is-dragging" : ""}${over ? " is-over" : ""}`}
         role="button"
         tabIndex={0}
         aria-label={label}
         aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-        onLostPointerCapture={endDrag}
         onKeyDown={onKeyDown}
         onFocus={onFocus}
       >
+        {/* 只有边缘两环是克隆（折射）；中心是透的，直接看穿到页面 */}
         <div className="glens__lens" aria-hidden="true">
-          {/* 三层放大：圆心 1.7，往外 1.52 / 1.36，各露在自己那一环上 → 字在贴边处被折回来。
-              主层也裁到 ~90% 半径为止，不然贴边那圈会和「折回来」的那层叠成双影。 */}
-          <div className="glens__mainclip">
+          <div className="glens__band glens__band--mid">
             <div
-              className="glens__mag glens__mag--main"
+              className="glens__mag"
               ref={(el) => {
                 mags.current[0] = el;
               }}
             />
           </div>
-          <div className="glens__band glens__band--mid">
-            <div
-              className="glens__mag glens__mag--mid"
-              ref={(el) => {
-                mags.current[1] = el;
-              }}
-            />
-          </div>
           <div className="glens__band glens__band--rim">
             <div
-              className="glens__mag glens__mag--rim"
+              className="glens__mag"
               ref={(el) => {
-                mags.current[2] = el;
+                mags.current[1] = el;
               }}
             />
           </div>
@@ -838,7 +727,6 @@ export default function GlassLens({ anchorRef, bodyRef, contentKey }) {
         <span className="glens__disp glens__disp--c" aria-hidden="true" />
         <span className="glens__prism" aria-hidden="true" />
       </div>
-
 
       {/* 读屏用：原文替换是纯视觉的，内容在这里念出来 */}
       <span className="glens__live" role="status" aria-live="polite">

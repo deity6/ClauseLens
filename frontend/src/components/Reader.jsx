@@ -70,7 +70,7 @@ function segment(text, spans) {
   return out;
 }
 
-export default function Reader({ docs, texts, tags, taxonomy, focus, open, setOpen }) {
+export default function Reader({ docs, texts, tags, taxonomy, focus, open, setOpen, dockRef }) {
   const reduce = useReducedMotion();
   const [active, setActive] = useState(docs[0]?.id);
   // 面板高度动画是否已经走完。量位置必须等它结束，否则展开动画会把落点一路带偏。
@@ -223,17 +223,26 @@ export default function Reader({ docs, texts, tags, taxonomy, focus, open, setOp
     return () => box.removeEventListener("scroll", onScroll);
   }, [open, active]);
 
-  // ⑥ 手动展开后，正文框要是在屏幕外（收起时页面被浏览器夹过），把它框回视野中间。
-  //    已经完整看得见就一动不动 —— 展开本身不该顺带推页面。
+  // ⑥ 手动展开后，正文框要是在屏幕外（收起时页面被浏览器夹过），把「这一节」带到视野里。
+  //    优先让「05 · SOURCE」这一行也露出来 —— 透镜就停在标题右边，展开时不该把标题顶走
+  //    （否则用户正要找透镜，它跟着 dock 一起滚出屏幕）；整节比视口高时才退化成居中。
+  //    已经看得见就一动不动 —— 展开本身不该顺带推页面。
   useEffect(() => {
     if (!open || !expanded || pending) return;
     const box = bodyRef.current;
-    if (!box) return;
+    const root = rootRef.current;
+    if (!box || !root) return;
     const r = box.getBoundingClientRect();
-    if (r.top >= topGap() && r.bottom <= window.innerHeight) return;
-    const boxTop = window.scrollY + r.top - (window.innerHeight - r.height) / 2;
-    if (reduce) window.scrollTo(0, boxTop);
-    else slowScroll(window, boxTop, 760);
+    const sec = (root.closest(".rsec") || root).getBoundingClientRect();
+    const gap = topGap();
+    const headerOk = sec.top >= gap - 6;
+    if (r.top >= gap && r.bottom <= window.innerHeight && headerOk) return;
+    const fits = sec.height <= window.innerHeight - gap - 24;
+    const top = fits
+      ? window.scrollY + sec.top - gap - 12
+      : window.scrollY + r.top - (window.innerHeight - r.height) / 2;
+    if (reduce) window.scrollTo(0, top);
+    else slowScroll(window, top, 760);
   }, [open, expanded, pending, reduce]);
 
   if (!texts) return null;
@@ -313,9 +322,9 @@ export default function Reader({ docs, texts, tags, taxonomy, focus, open, setOp
           </motion.div>
         )}
       </AnimatePresence>
-      {/* 玻璃透镜：挂在 body 级的定位层上（portal），所以面板收起也还在，位置写在 localStorage。
-          能拖到面板外，也能拖回正文上放大——见 GlassLens.jsx 顶部注释。 */}
-      <GlassLens anchorRef={rootRef} bodyRef={bodyRef} contentKey={active} />
+      {/* 玻璃透镜：挂在 body 级的定位层上（portal），坐标是视口坐标 —— 它是屏幕上的
+          放大镜，默认坐在「05 · SOURCE」标题右侧的 .lensdock 里（位置见 GlassLens.jsx 顶部注释）。 */}
+      <GlassLens anchorRef={rootRef} bodyRef={bodyRef} dockRef={dockRef} contentKey={active} />
     </div>
   );
 }
