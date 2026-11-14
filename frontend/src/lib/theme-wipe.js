@@ -212,8 +212,12 @@ export function startThemeWipe(nextTheme, { onDone } = {}) {
     const sw = document.querySelector(".liq-sw");
     if (sw) {
       const r = sw.getBoundingClientRect();
-      root.style.setProperty("--cl-ox", `${(((r.left + r.width / 2) / innerWidth) * 100).toFixed(1)}%`);
-      root.style.setProperty("--cl-oy", `${(((r.top + r.height / 2) / innerHeight) * 100).toFixed(1)}%`);
+      // 开关在屏幕外（页面滚下去了 / 键盘触发的）时夹进视口：否则圆从视口上方很远的
+      // 地方开始长，前 1 秒屏幕里什么都不会发生 —— 看起来像「转场坏了」。
+      const ox = Math.min(98, Math.max(2, ((r.left + r.width / 2) / innerWidth) * 100));
+      const oy = Math.min(98, Math.max(2, ((r.top + r.height / 2) / innerHeight) * 100));
+      root.style.setProperty("--cl-ox", `${ox.toFixed(1)}%`);
+      root.style.setProperty("--cl-oy", `${oy.toFixed(1)}%`);
     }
     root.style.setProperty("--cl-wipe-ms", `${WIPE_MS}ms`);
     const done = () => {
