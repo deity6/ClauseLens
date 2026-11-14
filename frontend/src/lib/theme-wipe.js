@@ -16,13 +16,16 @@ import { applyTheme, getTheme, otherTheme, prefersReducedMotion } from "./theme.
 
 const CELL = 4; // 每格 CSS 像素（对齐 lm-detector 的默认 cell=4）
 const FPS = 15; // 时间量化，15 帧/秒
-const D_FILL = 560; // 像素铺满
-const D_HOLD = 60; // 铺满后停一拍，让「换主题」发生在满屏那一帧里
+// v3：整体放慢（原来 560+60+520 ≈ 1.14s，用户嫌快）。这套是**没有 View Transitions
+// 的浏览器**才走的兜底：仍然要「铺满 → 换主题 → 擦开」两段，只能把第一段压短、第二段拉长。
+const D_FILL = 380; // 像素铺满（比原来短：它只是藏住换主题那一帧）
+const D_HOLD = 40; // 铺满后停一拍
 const T_COMMIT = D_FILL + D_HOLD;
-const D_REVEAL = 520; // 从左边擦掉（= 新内容长出来）
+const D_REVEAL = 980; // 从左边擦掉（= 新内容长出来）
 const T_END = T_COMMIT + D_REVEAL;
 const EDGE = 0.075; // 前沿抖动带宽度（占屏宽比例）
 const P_FULL = 1.12; // 让最右侧、带噪声的格子也过线（order 最大 ≈1.02）
+const WIPE_MS = 2200; // View Transitions 版总时长（ms），写进 --cl-wipe-ms
 
 let canvas = null;
 let ctx = null;
@@ -99,11 +102,18 @@ function ensure() {
 }
 
 function buildOrder(cols, rows, seed) {
-  // 每格的先后次序：从左到右 + 稳定噪声 → 前沿是毛的，不是一条直线
+  // 每格的先后次序：从左到右 + 稳定噪声 + **每行自己的快慢** → 前沿是毛的、斜的，
+  // 不是一条直线（用户：y 轴上不一定全对齐，可以有快有慢）。
   const arr = new Float32Array(cols * rows);
+  const rowsBias = new Float32Array(rows);
+  for (let y = 0; y < rows; y++) {
+    // 0–0.07 的行偏置：几条大波长（≈400px）叠一点点逐行噪声 —— 有的行领先、有的落后，
+    // 但不要变成「百叶窗」。之前 0.11 + 17 行周期太碎，前沿像撕纸。
+    rowsBias[y] = (Math.sin(y * 0.055 + seed * 0.13) * 0.5 + 0.5) * 0.055 + (hash(0.5, y * 0.21, seed) - 0.5) * 0.022;
+  }
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
-      arr[y * cols + x] = (x / cols) * 0.96 + hash(x * 0.5, y * 0.5, seed) * 0.06;
+      arr[y * cols + x] = Math.min(1.02, (x / cols) * 0.88 + rowsBias[y] + hash(x * 0.5, y * 0.5, seed) * 0.05);
     }
   }
   return arr;
@@ -190,6 +200,37 @@ export function startThemeWipe(nextTheme, { onDone } = {}) {
     sweepContent();
     onDone?.();
     return true;
+  }
+
+  // ① 首选 View Transitions（Chromium 111+）：浏览器替我们拍一张**旧页快照**，
+  //    换主题后的活页面是另一层。两层同时存在，所以能做到「一次铺」——
+  //    旧的那层从开关那里向外化掉，新的那层同时在底下露出来，不再有「先全黑再上色」。
+  //    波形/时长/原点都在 theme-transition.css 里（原点用 --cl-ox/--cl-oy 传开关位置）。
+  if (typeof document.startViewTransition === "function") {
+    busy = true;
+    const root = document.documentElement;
+    const sw = document.querySelector(".liq-sw");
+    if (sw) {
+      const r = sw.getBoundingClientRect();
+      root.style.setProperty("--cl-ox", `${(((r.left + r.width / 2) / innerWidth) * 100).toFixed(1)}%`);
+      root.style.setProperty("--cl-oy", `${(((r.top + r.height / 2) / innerHeight) * 100).toFixed(1)}%`);
+    }
+    root.style.setProperty("--cl-wipe-ms", `${WIPE_MS}ms`);
+    const done = () => {
+      busy = false;
+      root.style.removeProperty("--cl-wipe-ms");
+      root.style.removeProperty("--cl-ox");
+      root.style.removeProperty("--cl-oy");
+      onDone?.();
+    };
+    try {
+      const vt = document.startViewTransition(() => applyTheme(next));
+      vt.finished.then(done, done);
+      return true;
+    } catch {
+      done();
+      // 掉到下面的画布落幕（老浏览器 / 被策略禁用的情况）
+    }
   }
 
   ensure();

@@ -1,0 +1,76 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   主题转场 · 一次性「化掉」（View Transitions 版）
+
+   为什么换实现：像素落幕是「先全铺成新底色、再擦开」两段——因为 DOM 只能有一个主题，
+   铺满那一帧才敢换 data-theme。v2 的问题不是画得不好，是它必然要铺两次。
+
+   这里改用浏览器自带的 View Transitions：调 startViewTransition() 时浏览器会替我们
+   拍一张**旧页快照**（::view-transition-old(root)），换主题后的活页面则是
+   ::view-transition-new(root)。两张同时存在 → 旧的那张一边消散、新的那张一边露出来，
+   一次铺、一个波前，不再有「先黑屏再上色」。
+
+   波前的形状：从触发点（右上角的开关附近）向外化的圆。
+   · y 上不同高度的行不是同一条直线通过（圆有弧度），越靠圆心那一行越早、越远越晚；
+   · 同一行里 x 的推进速度也不一样（圆弧扫过时中间快、两头慢）——「有快有慢」是圆自带的；
+   · 边缘是一条 7% 半径宽的溶解带，不是硬边，所以看起来是「化开」而不是「切过去」。
+
+   降级：没有 startViewTransition 的浏览器仍走 theme-wipe.js 里的画布落幕（已放慢、
+   波前也不再是一条竖线）。
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@property --cl-r {
+  syntax: "<length-percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+
+/* 关掉浏览器默认的交叉淡入：两层都交给下面的 mask 说话 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+  width: 100%;
+  height: 100%;
+  object-fit: none;
+}
+::view-transition-new(root) {
+  z-index: 1;
+}
+
+/* 旧页在上、被 mask 化掉；新页在下、原地露出来 */
+::view-transition-old(root) {
+  z-index: 2;
+  --cl-r: 0%;
+  -webkit-mask-image: radial-gradient(
+    circle at var(--cl-ox, 84%) var(--cl-oy, 8%),
+    transparent 0 calc(var(--cl-r) - 4.5%),
+    #000 calc(var(--cl-r) + 0.5%),
+    #000 100%
+  );
+  mask-image: radial-gradient(
+    circle at var(--cl-ox, 84%) var(--cl-oy, 8%),
+    transparent 0 calc(var(--cl-r) - 4.5%),
+    #000 calc(var(--cl-r) + 0.5%),
+    #000 100%
+  );
+  /* 缓动刻意「慢起 → 匀速推进 → 轻轻收尾」：
+     前两版（0.32/0.78、0.42/0.02）都在中段窜得太快，实测 0.4–0.7s 就扫掉大半屏，
+     看起来像 0.35s 的闪。这里放慢起步、把中段摊平，总时长 2s。 */
+  animation: cl-melt var(--cl-wipe-ms, 2200ms) cubic-bezier(0.33, 0.05, 0.35, 1) forwards;
+}
+
+@keyframes cl-melt {
+  from {
+    --cl-r: 0%;
+  }
+  to {
+    --cl-r: 122%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root) {
+    animation: none;
+    mask-image: none;
+  }
+}

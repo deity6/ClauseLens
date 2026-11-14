@@ -713,3 +713,28 @@ found=0，只剩 registry 快照能用。所以之前很多「成功」其实是
 
 **验收**：点按与拖拽都能切（拖到右端只触发一次）；`prefers-reduced-motion` 下仍按设计直接切不播动画；
 `npm run build` 0 error。
+---
+
+## 2026-11-14（第十一轮）· 转场改成「一次铺」+ 开关图标再软化
+
+用户三条：①「太阳和月亮可以再拟态简化一些，柔和一些，先保留这一版本（push 到 github）」；
+②「当前动画切换一次要铺两次……能不能铺一次，同时消散浅色恢复暗色」；③「转场慢一些，当前太快」。
+
+- **push**：先把上一版（`3f8a1ab`）推到 origin/master，作为可回退的检查点。
+- **一次铺**：像素落幕天生是两段——DOM 只有一个主题，必须铺满那一帧才敢换 `data-theme`。
+  改用 **View Transitions**：`startViewTransition()` 时浏览器留一张旧页快照
+  （`::view-transition-old(root)`），换主题后的活页面是 `::view-transition-new(root)`；
+  两层同时存在，于是只需要一条 mask 动画：旧页从开关处被一个圆化掉，新的同时在底下露出来。
+  新文件 `src/theme-transition.css`：`radial-gradient` + `@property --cl-r`（0→122%），
+  伪元素 `animation: cl-melt`。无 VT 的浏览器仍走原来的画布落幕（降级）。
+- **慢**：总时长 0.35s（实测）→ 2.2s；缓动从 `(.32,.78,…)` 那种前段猛冲换成 `(.33,.05,.35,1)`，
+  实测 `--cl-r` 曲线：0.4s≈1/7、1s≈4/5、1.3s 过最远角。
+- **y 不对齐、有快有慢**：圆的波前自带这一点（中间那行先过、越远越晚；同一行中间快两头慢）；
+  降级版的 `buildOrder()` 也改了：每行 0–7% 偏置（波长 ~400px + 一点逐行噪声），
+  不再是「百叶窗」，而是几条慢波推着前沿走。
+- **图标**：太阳 = 实心小核 + 8 根很短很淡的射线 + 一层 currentColor 光晕；月亮 = 两条圆相减的月牙
+  + 同款光晕。都不描边、低对比，远看是一个软点。
+
+**验收**：`out/shots/vt/contact2.png`（浅→深 8 帧）、`contact-reverse.png`（深→浅 4 帧）、
+`fallback-260.png`（强制关掉 VT 的画布降级）；`out/shots/theme2/*-switch.png`（6× 放大看两枚图标）；
+两次方向切换 + 拖拽切换都只触发一次；`npm run build` 0 error。

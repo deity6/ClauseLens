@@ -86,6 +86,11 @@ const MID_X = (SHUT_X + OPEN_X) / 2;
 /* ── 轨道里的两枚图标（本站加的一层）─────────────────────
    浅色 = 太阳，深色 = 月亮（用户：「一个是浅色，另一个是深色，用月亮之类的就行了」）。
    18px viewBox 的内联 SVG，不引图标库。
+
+   形：都做成「一个实心主体 + 一圈很淡的光晕」——光是拟态的，不描边；
+   射线短、细、半透明，所以远看是一个软的点，不是一团尖刺。
+   光晕用 currentColor 的低透明径向渐变，跟着主题一起换色，不额外引颜色。
+
    为什么必须另起一层：goo 滤镜按 alpha 阈值，字形会被吃掉——上面那句
    "an unfiltered layer above it carrying the text" 说的就是这件事。
    本站其实没挂 #liq-goo，但分层照原样留着，将来谁把滤镜加回来都不会坏。
@@ -95,20 +100,19 @@ const MID_X = (SHUT_X + OPEN_X) / 2;
    永远是可以去的那一侧，「被吞掉的那枚」是当前所在的一侧——液态开关把当前
    状态吞进水滴里，这比在拇指上画个标记更像这个组件本身。 */
 const GlyphSun = () => (
-  <svg
-    className="liq-ico"
-    viewBox="0 0 18 18"
-    width="18"
-    height="18"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.4"
-    strokeLinecap="round"
-    aria-hidden="true"
-    focusable="false"
-  >
-    <circle cx="9" cy="9" r="3.5" />
-    <path d="M9 1.7v1.6M9 14.7v1.6M1.7 9h1.6M14.7 9h1.6M3.8 3.8l1.15 1.15M13.05 13.05l1.15 1.15M14.2 3.8l-1.15 1.15M4.95 13.05L3.8 14.2" />
+  <svg className="liq-ico" viewBox="0 0 18 18" width="18" height="18" aria-hidden="true" focusable="false">
+    <defs>
+      <radialGradient id="liq-sun-glow">
+        <stop offset="40%" stopColor="currentColor" stopOpacity="0.22" />
+        <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <circle cx="9" cy="9" r="8.7" fill="url(#liq-sun-glow)" />
+    <g stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" opacity="0.5">
+      <path d="M9 2.9v1.3M9 13.8v1.3M2.9 9h1.3M13.8 9h1.3" />
+      <path d="M4.8 4.8l.9.9M12.3 12.3l.9.9M13.2 4.8l-.9.9M5.7 12.3l-.9.9" />
+    </g>
+    <circle cx="9" cy="9" r="3.15" fill="currentColor" />
   </svg>
 );
 
@@ -116,12 +120,17 @@ const GlyphSun = () => (
 const GlyphMoon = () => (
   <svg className="liq-ico" viewBox="0 0 18 18" width="18" height="18" aria-hidden="true" focusable="false">
     <defs>
+      <radialGradient id="liq-moon-glow">
+        <stop offset="45%" stopColor="currentColor" stopOpacity="0.18" />
+        <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+      </radialGradient>
       <mask id="liq-moon-cut">
         <rect width="18" height="18" fill="#000" />
-        <circle cx="9" cy="9" r="6.3" fill="#fff" />
-        <circle cx="12.6" cy="6.5" r="5.6" fill="#000" />
+        <circle cx="9" cy="9" r="6.2" fill="#fff" />
+        <circle cx="12.5" cy="6.6" r="5.5" fill="#000" />
       </mask>
     </defs>
+    <circle cx="9" cy="9" r="8.7" fill="url(#liq-moon-glow)" />
     <rect width="18" height="18" fill="currentColor" mask="url(#liq-moon-cut)" />
   </svg>
 );

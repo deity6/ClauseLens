@@ -19,6 +19,7 @@ import "@fontsource-variable/inter/wght.css";
 import "./patterns.css";
 import "./styles.css";
 import "./tldr-means.css";
+import "./theme-transition.css";
 // 主题 B（点阵）的两层：基础层 + 组件皮肤层。全部规则挂在 [data-theme="geek"] 下，
 // 浅色主题不受影响；因为体积不大且切换要即时，直接静态引入（不做按需加载）。
 import "./theme-geek.css";

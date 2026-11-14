@@ -61,15 +61,25 @@
 - **雷达**：细网格 + 1.5px 强调色折线 + 12% 面积填充 + 顶点圆点；维度条回到 4px 圆角细条。
 - **等待页文档纸**：18px 圆角面板 + 细骨架条 + 一条 1px 扫描线（不再点阵行/读数墙）。
 
-## 4. 切换转场：像素落幕（lm-detector 的算法）
+## 4. 切换转场：一次铺的「化开」（View Transitions，2026-11-14 起）
 
-`CELL=4px`，画布 `ceil(宽/4)×ceil(高/4)`，`image-rendering: pixelated`；`order = x/宽 + hash·6%`，
-前沿 `probe = (p − order)/0.075`，抖动带内用 `bayer4(x,y) < (probe+1)/2`；15fps 量化。
+**旧的像素落幕是两段**（先全铺新底色 → 再擦开）。用户反馈「一次切换要铺两次」，而且两段都往同一个方向扫，
+看起来就是两遍。根因没法绕：DOM 只有一个主题，必须等铺满那一帧才敢换 `data-theme`。
 
-1. `0–560ms`：新底色的像素格从左往右铺满，前沿是加密的方格（带内提亮为 `--beam`）；
-2. `560–620ms`：铺满后停一拍，此时才 `applyTheme`（藏在底下）；
-3. `620–1140ms`：同一套抖动反着擦掉，擦掉的地方露出新主题正文；正文再按 x 错峰 420ms 浮现；
-4. `prefers-reduced-motion`：不建 canvas，直接切换 + 160ms 淡入（已实测 60ms 内完成）。
+现在主路径改成浏览器自带的 View Transitions：
+
+1. `document.startViewTransition(() => applyTheme(next))` —— 浏览器替我们留一张**旧页快照**
+   （`::view-transition-old(root)`），换主题后的活页面是 `::view-transition-new(root)`；
+2. 两层同时存在，于是只需要**一次** mask 动画：旧页从右上角（开关所在）向外被一个圆化掉，
+   新的那层在底下同时露出来 —— 不再有「先黑屏再上色」；
+3. mask 是 `radial-gradient(circle at 开关) + @property --cl-r`，2.2s、`cubic-bezier(.33,.05,.35,1)`；
+   圆的波前天然满足「y 轴不对齐、有快有慢」：中间那行先过、越远越晚，同一行里中间快两头慢；
+   边是一条 4.5% 半径宽的溶解带，所以是「化开」不是「切过去」；
+4. **降级**：没有 `startViewTransition` 的浏览器仍走 `theme-wipe.js` 的画布版（已放慢到
+   `380 + 40 + 980ms`，`order` 里给每行加了 0–7% 的偏置，前沿不再是一条竖线）。
+
+实现：`src/theme-transition.css`（伪元素 + `@property --cl-r`）、`src/lib/theme-wipe.js`（选择走哪条路）。
+`prefers-reduced-motion` 下两边都不播动画，直接换主题。
 
 ## 5. 文件
 
