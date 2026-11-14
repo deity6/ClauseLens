@@ -6,7 +6,11 @@
 // 主题名：
 //   light = 「验光单」暖纸（默认）
 //   geek  = 「点阵 · SPECTRAL SCAN」近黑点阵
-// 不跟随系统：这个工具是给人「捧着看一份文件」的，光线由用户自己决定。
+//
+// 跟随规则（2026-11-14 改）：
+//   · 桌面（鼠标 + 宽屏）：不跟随系统 —— 这个工具是「捧着看一份文件」，光线由用户自己决定；
+//   · 手机 / 平板（窄屏 + 粗指针）：**用户没手动选过时跟随系统深浅色**，系统深色就上点阵主题，
+//     系统浅色就回纸主题；手动拨过一次开关之后就以用户的选择为准（存 localStorage['cl:theme']）。
 import { useEffect, useState } from "react";
 
 const KEY = "cl:theme";
@@ -29,10 +33,29 @@ function stored() {
   }
 }
 
+/** 手机 / 平板：窄屏 +（粗指针 或 移动端 UA）。桌面窄窗口不算。 */
+export function isMobileLike() {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  const narrow = window.matchMedia("(max-width: 900px)").matches;
+  const coarse = window.matchMedia("(pointer: coarse)").matches;
+  const ua = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS|MiuiBrowser/i.test(navigator.userAgent || "");
+  return narrow && (coarse || ua);
+}
+
+/** 系统当前是深色还是浅色。 */
+export function systemTheme() {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "geek" : "light";
+}
+
 export function getTheme() {
   if (current) return current;
   const attr = document.documentElement.dataset.theme;
-  current = THEMES.includes(attr) ? attr : stored() || "light";
+  if (THEMES.includes(attr)) {
+    current = attr; // index.html 的内联脚本已经在首帧前算好了
+    return current;
+  }
+  current = stored() || (isMobileLike() ? systemTheme() : "light");
   return current;
 }
 
@@ -67,6 +90,23 @@ export function useTheme() {
   const [t, setT] = useState(getTheme);
   useEffect(() => subscribe(setT), []);
   return t;
+}
+
+/**
+ * 移动端跟随系统：系统深浅色一变就跟着换（不写入 localStorage，所以「没手动选过」这件事不被破坏）。
+ * 手动拨过开关（localStorage 有值）之后就不再跟随。
+ */
+export function startSystemThemeSync() {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const onChange = () => {
+    if (!isMobileLike() || stored()) return;
+    const next = mq.matches ? "geek" : "light";
+    if (next === getTheme()) return;
+    applyTheme(next, { persist: false });
+  };
+  mq.addEventListener?.("change", onChange);
+  return () => mq.removeEventListener?.("change", onChange);
 }
 
 export function prefersReducedMotion() {

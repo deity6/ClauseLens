@@ -22,18 +22,41 @@ export function Highlight({ text, spans }) {
   return out;
 }
 
+// 最近一次已知的计数（进程内缓存）。
+// 抽屉开合会把 Votes 卸载再挂载，而父级传下来的 summary 是**页面加载时**那一份：
+// 重挂载时如果直接拿 summary，刚投的那一票就「消失」了（数字退回投票前），
+// 只有刷新页面才回来 —— 因为那时候 fetchSummary 已经包含它。
+// 所以每投一次都把最新计数记在这里，重挂载时优先用它；服务端返回权威值时再覆盖。
+const latestCnt = new Map();
+const cntKey = (domain, tagId) => `${domain}|${tagId}`;
+
 function Votes({ domain, tagId, summary, offline }) {
+  const k = cntKey(domain, tagId);
   const [mine, setMine] = useState(() => myVote(domain, tagId));
-  const [cnt, setCnt] = useState(summary || { agree: 0, disagree: 0 });
+  const [cnt, setCnt] = useState(() => latestCnt.get(k) || summary || { agree: 0, disagree: 0 });
   const [pulse, setPulse] = useState(null);
-  useEffect(() => setCnt(summary || { agree: 0, disagree: 0 }), [summary]);
+  useEffect(() => {
+    const hit = latestCnt.get(k);
+    if (hit) {
+      setCnt(hit);
+      return;
+    }
+    setCnt(summary || { agree: 0, disagree: 0 });
+  }, [summary, k]);
   const vote = async (v) => {
     if (mine) return;
     setMine(v);
     setPulse(v);
-    setCnt((c) => ({ ...c, [v]: (c[v] || 0) + 1 }));
+    setCnt((c) => {
+      const next = { ...c, [v]: (c[v] || 0) + 1 };
+      latestCnt.set(k, next);
+      return next;
+    });
     const s = await sendVote({ domain, tag: tagId, vote: v, offline });
-    if (s && s[tagId]) setCnt(s[tagId]);
+    if (s && s[tagId]) {
+      latestCnt.set(k, s[tagId]);
+      setCnt(s[tagId]);
+    }
   };
   return (
     <div className="votes">

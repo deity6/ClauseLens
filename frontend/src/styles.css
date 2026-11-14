@@ -3,7 +3,7 @@
    token 命名：paper / ink / line / tint，不沿用 foreground/background 那套。
 
    主题：默认浅色（<html data-theme="light">），深色用 data-theme="dark" 手动切。
-   不跟随系统——这个工具是给人「捧着看一份文件」的，光线应该由用户决定。 */
+   桌面不跟随系统——这个工具是给人「捧着看一份文件」的，光线应该由用户决定；\n   手机 / 平板在用户没手动选过时跟随系统深浅色（见 lib/theme.js 的 startSystemThemeSync）。 */
 
 /* 纸色演进史：
    ① #f4f1ea 偏黄绿（「像 AI 生成的」）→ ② #f6f5f2 中性近白 → ③ 现在：纯白打底 + 极淡橙晕。

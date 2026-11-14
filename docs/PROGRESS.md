@@ -779,3 +779,22 @@ found=0，只剩 registry 快照能用。所以之前很多「成功」其实是
 
 做法：源码用 `git archive HEAD` 落盘（不带 node_modules / dist / 未跟踪数据），截图与 PPT 从旧包提取后补齐，
 整包用 `ZipFile.CreateFromDirectory` 压成 392 条目的 zip；`out/` 本来就被 gitignore，包不进仓库。
+---
+
+## 2026-11-14（第十四轮）· 投票数字回退 + 移动端跟随系统主题
+
+**① 投完票收拢抽屉、再打开，数字退回投票前**（刷新页面才对，因为那时候 summary 已经包含这一票）。
+根因：`Votes` 的计数来自父级传下来的 `summary`，而 `summary` 是**页面加载时** `fetchSummary(domain)` 的那一份；
+抽屉开合会把 `Votes` 卸载再挂载，重挂载时又拿旧 summary 初始化 → 刚投的票「消失」。
+修法（`TagWall.jsx`）：进程内 `latestCnt` 缓存（`domain|tagId → {agree, disagree}`），投票时先写乐观值、
+服务端返回权威 summary 时再覆盖；`useState` 初始化与 `useEffect` 都优先读缓存。
+实测：0/0 → 认同 → 1/0，「已记下」出现；收拢重开仍是 1/0，按钮仍是 disabled + `is-mine`。
+
+**② 手机开了系统深色，网站还是浅色（看着很怪）**。改成移动端跟随系统：
+- `index.html` 的首帧内联脚本：没手动选过主题时，`窄屏 + (粗指针 或 移动端 UA)` 且 `prefers-color-scheme: dark`
+  → 直接 `data-theme=geek`（防闪白）；否则浅色。
+- `lib/theme.js` 新增 `isMobileLike()` / `systemTheme()` / `startSystemThemeSync()`：系统深浅色在会话中途变化也跟着换，
+  但**不写 localStorage** —— 一旦用户手动拨过开关（有 `cl:theme`），就以用户选择为准，不再跟随。
+- 桌面（鼠标 + 宽屏）完全不变：默认浅色，手动选的主题照旧持久化。
+实测（CDP 模拟 iPhone 390×844）：系统 dark → `geek`；系统 light → `light`；会话中 light→dark 会实时切；
+桌面 1440 开 dark → 仍是 `light`。

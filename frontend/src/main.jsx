@@ -25,11 +25,13 @@ import "./theme-transition.css";
 import "./theme-geek.css";
 import "./theme-geek-components.css";
 
-import { applyTheme, getTheme } from "./lib/theme.js";
+import { applyTheme, getTheme, startSystemThemeSync } from "./lib/theme.js";
 
 // 主题：index.html 里的内联脚本已经在首帧前写过一次 data-theme（防闪白），
 // 这里再走一遍统一入口，把 color-scheme 与 <meta theme-color> 一并对齐。
 applyTheme(getTheme(), { persist: false });
+// 手机 / 平板：没手动选过主题时跟随系统深浅色（桌面不动）
+startSystemThemeSync();
 
 // 底纹随时可切：?pattern=iris（见 patterns.css 顶部清单）
 const _pat = new URLSearchParams(location.search).get("pattern");

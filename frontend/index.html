@@ -5,13 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#ffffff" />
-    <!-- 主题要在首帧之前定下来，否则会先闪一下浅色再变深。只读 localStorage，失败就当浅色。 -->
+    <!-- 主题要在首帧之前定下来，否则会先闪一下浅色再变深。
+         优先级：用户手动选过（localStorage）> 移动端跟随系统深浅色 > 桌面浅色。 -->
     <script>
       try {
-        if (localStorage.getItem("cl:theme") === "geek") {
-          document.documentElement.dataset.theme = "geek";
-          document.documentElement.style.colorScheme = "dark";
+        var t = localStorage.getItem("cl:theme");
+        if (t !== "light" && t !== "geek") {
+          var narrow = matchMedia("(max-width: 900px)").matches;
+          var coarse = matchMedia("(pointer: coarse)").matches;
+          var ua = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS|MiuiBrowser/i.test(navigator.userAgent || "");
+          var mobile = narrow && (coarse || ua);
+          t = mobile && matchMedia("(prefers-color-scheme: dark)").matches ? "geek" : "light";
         }
+        document.documentElement.dataset.theme = t;
+        document.documentElement.style.colorScheme = t === "geek" ? "dark" : "light";
       } catch (e) {}
     </script>
     <title>ClauseLens 条款透镜 · 注册前，先看看你同意了什么</title>
