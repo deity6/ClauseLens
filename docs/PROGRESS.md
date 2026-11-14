@@ -818,7 +818,9 @@ found=0，只剩 registry 快照能用。所以之前很多「成功」其实是
   改成不写死，`getTheme()` 只认引导脚本留下的 `data-theme-boot` 标记，否则按规则自己算一遍（脚本被拦也能落到深色）。
 - `_headers` 给 `/theme-boot*.js` 写 `max-age=0`（在 `*.pages.dev` 上有效）；但自定义域上 CF 的浏览器缓存 TTL（4h）会盖掉它，实测 `_headers` 不生效——所以文件名带版本号（`theme-boot.v2.js`），逻辑一改就升 vN。
 
-**验收**（本地 preview + 本地后端；脚本在 `.tmp-inspect/`，结论已记在这里）：
+**窄屏排版**：投票行的「问题 / 两个按钮 / 已记下提示」在 ≤640px 各占一行，不再挤成参差的两三行。
+
+**验收**（本地 preview + 本地后端；脚本在 `out/probe/`，结论已记在这里）：
 - `vote-accept.mjs`：0/0 → 认同 1/0（后端未变）→ 刷新后后端记到 agree → 撤回 0/0（后端仍旧）→
   刷新后后端回 0/0 → 改投不认同 → 刷新后端 disagree → 清 localStorage 后从服务端认回「已记下」，全部断言通过。
 - `demo-vote.mjs`：`?demo=` 离线模式只写本机、`/api/feedback` 请求数 0，刷新后票还在。
