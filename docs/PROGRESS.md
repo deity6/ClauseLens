@@ -762,3 +762,20 @@ found=0，只剩 registry 快照能用。所以之前很多「成功」其实是
 - `node/node.exe` 用**硬链接**放进两个版本文件夹（同一份数据，不额外占空间）→ 每个版本文件夹可以单独拷走；
   根目录 `说明.txt` 写了两版差别和运行方式，各自文件夹里也有一份 `说明.txt`。
 - 顺手清掉了 `frontend/dist` 里 11 个历史 `index-*` 包（`vite build` 没清空 outDir 造成的 17 MB → 10.1 MB）。
+---
+
+## 2026-11-14（第十三轮）· 赛后记录包 v1.1.0
+
+按上一版（`ClauseLens-赛后记录-2026-11-13.zip`，161 MB）的结构整理了一份新的，落盘在
+`out/release/ClauseLens-赛后记录-2026-11-14.zip`（**180 MB**，上限 500 MB 以内）：
+
+- `code/` 取 git 跟踪的全量（250 文件里 159 个，1.4 MB；含 `ascii.txt` / `glass lens.txt` / `toggle.txt` 三个参考样本）；
+- `docs/` 全量（38.7 MB，含设计过程截图）；`screenshots/` 11 组 131 张（旧包的 98 张原样保留，
+  新增「修复前后-透镜v3」「主题开关-太阳月亮」「水波转场-逐帧」「线上-v1.1.0」「用户反馈-参考图」33 张）；
+- `evidence/`：`git bundle`（37 MB，可 `git clone` 还原 28 次提交）+ `git-log` + 仓库统计 + 线上验证 + 会话线索；
+- `demo/`：新版离线包 zip（42.5 MB，含便携 Node）；`presentation/`：PPT ×2 + 制作方案 + 录制脚本；
+- 根目录 `README.md` / `FILES.md` / `TIMELINE.md` / `PROVENANCE.md` / `CHANGELOG-v1.1.0.md`，
+  同时在 `out/release/ClauseLens-赛后记录-2026-11-14-说明/` 放了一份纯 md（30 KB），不解压就能读。
+
+做法：源码用 `git archive HEAD` 落盘（不带 node_modules / dist / 未跟踪数据），截图与 PPT 从旧包提取后补齐，
+整包用 `ZipFile.CreateFromDirectory` 压成 392 条目的 zip；`out/` 本来就被 gitignore，包不进仓库。
