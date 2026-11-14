@@ -147,8 +147,12 @@ ssh <主机别名> "cd ~/clauselens && git pull && sudo systemctl restart clause
 ssh <主机别名> "journalctl -u clauselens -f"
 ssh <主机别名> "free -m; systemctl show clauselens -p MemoryCurrent --value"
 
-# 更新前端（本地）
-cd frontend && npm run build && npx wrangler pages deploy dist --project-name clauselens
+# 更新前端（本地）——改主题/动效/透镜这类前端改动只需要这一步
+cd frontend && npm run build && npx wrangler pages deploy dist --project-name clauselens --branch master
+
+# 说明：Pages 项目是 direct upload，没有接 Git —— git push 不会自动上线；
+# 跑上面这条才会更新 production（自定义域 lens.dohub.tech 自动跟随 canonical deployment）。
+# 只想部署、不想装 wrangler 全局：用 npx（本机已缓存 wrangler@3.114.0）。
 ```
 
 ### 本地跑「线上版本」（与 CF Pages 同构）

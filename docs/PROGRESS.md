@@ -738,3 +738,27 @@ found=0，只剩 registry 快照能用。所以之前很多「成功」其实是
 **验收**：`out/shots/vt/contact2.png`（浅→深 8 帧）、`contact-reverse.png`（深→浅 4 帧）、
 `fallback-260.png`（强制关掉 VT 的画布降级）；`out/shots/theme2/*-switch.png`（6× 放大看两枚图标）；
 两次方向切换 + 拖拽切换都只触发一次；`npm run build` 0 error。
+---
+
+## 2026-11-14（第十二轮）· 上线到 CF Pages、demo 包按版本拆开
+
+**观感记录（给以后的人看）**
+- 旧转场（≤ v1.0.0）：像**拉横向帘幕**——新底色从左往右铺满、停一拍换主题、再从左往右擦开，两段。
+- 新转场（v1.1.0 起）：像**水波荡漾**——从右上角开关那里荡开一团，旧页一边散、新页一边露，一次铺完。
+
+**部署**
+- `wrangler pages deploy dist --project-name clauselens --branch master`（production，canonical `45bb4264`）。
+  Pages 项目是 **direct upload**，没有接 Git：`git push` 不会自动上线，必须跑一次 wrangler（或在 CF 里接 GitHub）。
+- 自定义域 `lens.dohub.tech`：`status=active`、证书 google、DNS `CNAME → clauselens-avs.pages.dev (proxied)`；
+  实测线上 `https://lens.dohub.tech/` 已经是新产物（`index-C24zc2pU.js`），`/api/analyze` 经 Pages Function 代理
+  到线上后端仍然正常（SSE 首帧 `resolve`）。
+- 这一轮起，前端改动只需要 CF Pages；后端在 AWS（`<主机别名>`，systemd `clauselens.service`），
+  只有改 `backend/` 才需要 `ssh … git pull && systemctl restart`。
+
+**demo 包（`demo-pkg/`，不入库）**
+- `v1.0.0-20261113-curtain/`：旧版（横向帘幕、透镜 v2、纸/点阵开关）。
+- `v1.1.0-20261114-ripple/`：新版（水波转场、透镜 v3、太阳/月亮开关）。`site/` 是当前干净构建
+  （`index-C24zc2pU.js`，10.1 MB）。
+- `node/node.exe` 用**硬链接**放进两个版本文件夹（同一份数据，不额外占空间）→ 每个版本文件夹可以单独拷走；
+  根目录 `说明.txt` 写了两版差别和运行方式，各自文件夹里也有一份 `说明.txt`。
+- 顺手清掉了 `frontend/dist` 里 11 个历史 `index-*` 包（`vite build` 没清空 outDir 造成的 17 MB → 10.1 MB）。
