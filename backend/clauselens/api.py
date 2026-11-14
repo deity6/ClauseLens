@@ -182,9 +182,21 @@ class Feedback(BaseModel):
     comment: str | None = Field(default=None, max_length=200)
 
 
+class VoteChange(BaseModel):
+    tag_id: str = Field(max_length=64)
+    vote: str | None = Field(default=None, pattern="^(agree|disagree)$")   # None = 撤回
+
+
+class VoteBatch(BaseModel):
+    domain: str = Field(max_length=253)
+    votes: list[VoteChange] = Field(default_factory=list, max_length=200)
+
+
 # 反馈的内存索引：启动时读一次，之后写入时同步更新，summary 不再每次扫全文件
 _fb_counts: dict[str, dict[str, dict[str, int]]] = {}
-_voted: set[str] = set()
+# 每个 (ip_hash|domain|tag) 当前投的是哪一边。投票可以改、可以撤，所以这里存的是「最终状态」，
+# 计数就是所有状态之和——不是追加式累加（那样换票/撤回没法把旧票退回去）。
+_voted: dict[str, str] = {}
 _fb_loaded = False
 # 投票去重用的盐：**不能硬编码**。审计实测 sha1("clauselens-vote|104.22.20.8")[:12] 能和
 # feedback.jsonl 里的 ip_hash 精确对上——等于把 IP 明文存进了文件（GDPR/PIPL 意义的个人信息）。
@@ -213,15 +225,62 @@ FB_IP_SALT = _vote_salt()
 FB_ROTATE_BYTES = 8 * 1024 * 1024
 
 
+def _hash_ip(ip: str) -> str:
+    return hashlib.sha1(f"{FB_IP_SALT}|{ip}".encode()).hexdigest()[:12]
+
+
+def _vote_key(ip_hash: str, dom: str, tag: str) -> str:
+    return f"{ip_hash}|{dom}|{tag}"
+
+
+def _apply_vote(dom: str, tag: str, ip_hash: str | None, vote: str | None) -> str | None:
+    """把某人的票设成 vote（None = 撤回），返回改之前的值。调用方持 _lock。"""
+    d = _fb_counts.setdefault(dom, {}).setdefault(tag, {"agree": 0, "disagree": 0})
+    if not ip_hash:                 # 没有哈希的老记录：只计数，不能改
+        if vote:
+            d[vote] += 1
+        return None
+    key = _vote_key(ip_hash, dom, tag)
+    old = _voted.get(key)
+    if old == vote:
+        return old
+    if old:
+        d[old] = max(0, d[old] - 1)
+    if vote:
+        d[vote] += 1
+        _voted[key] = vote
+    else:
+        _voted.pop(key, None)
+    return old
+
+
 def _fb_index(r: dict) -> None:
     dom, tag, vote = r.get("domain"), r.get("tag_id"), r.get("vote")
-    if not dom or not tag or vote not in ("agree", "disagree"):
+    if not dom or not tag or vote not in ("agree", "disagree", None):
         return
-    d = _fb_counts.setdefault(dom, {}).setdefault(tag, {"agree": 0, "disagree": 0})
-    d[vote] += 1
-    h = r.get("ip_hash")
-    if h:
-        _voted.add(f"{h}|{dom}|{tag}")
+    _apply_vote(dom, tag, r.get("ip_hash"), vote)
+
+
+def _fb_payload(dom: str, ip_hash: str) -> dict:
+    counts = json.loads(json.dumps(_fb_counts.get(dom, {})))
+    prefix = f"{ip_hash}|{dom}|"
+    mine = {k[len(prefix):]: v for k, v in _voted.items() if k.startswith(prefix)}
+    return {"ok": True, "summary": counts, "counts": counts, "mine": mine}
+
+
+def _append_feedback(dom: str, tag: str, vote: str | None, ip_hash: str, comment: str | None = None) -> None:
+    """追加一条变更记录（vote=null 表示撤回）。调用方持 _lock。"""
+    rec = {"domain": dom, "tag_id": tag, "vote": vote, "comment": comment,
+           "ip_hash": ip_hash, "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+    FEEDBACK.parent.mkdir(parents=True, exist_ok=True)
+    with FEEDBACK.open("a", encoding="utf-8", newline="\n") as f:
+        f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    # 文件按体积滚动；内存计数保留，不受滚动影响
+    try:
+        if FEEDBACK.stat().st_size > FB_ROTATE_BYTES:
+            FEEDBACK.replace(FEEDBACK.with_name("feedback.jsonl.1"))
+    except OSError:
+        pass
 
 
 def _fb_ensure() -> None:
@@ -255,25 +314,51 @@ def feedback(fb: Feedback, request: Request):
     dom = _norm_domain(fb.domain)
     if len(dom) > 253 or not _DOMAIN_RE.match(dom):
         raise HTTPException(400, "域名格式不对")
-    ip_hash = hashlib.sha1(f"{FB_IP_SALT}|{ip}".encode()).hexdigest()[:12]
+    ip_hash = _hash_ip(ip)
     _fb_ensure()
     with _lock:
-        if f"{ip_hash}|{dom}|{fb.tag_id}" in _voted:
-            raise HTTPException(409, "这个标签你已经投过了")
-    rec = {"domain": dom, "tag_id": fb.tag_id, "vote": fb.vote, "comment": fb.comment,
-           "ip_hash": ip_hash, "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
-    FEEDBACK.parent.mkdir(parents=True, exist_ok=True)
+        # 同一个值重复提交是幂等的（老客户端会重试）；换票/撤回走这里也能落地
+        if _apply_vote(dom, fb.tag_id, ip_hash, fb.vote) != fb.vote:
+            _append_feedback(dom, fb.tag_id, fb.vote, ip_hash, fb.comment)
+        return _fb_payload(dom, ip_hash)
+
+
+@app.post("/api/feedback/batch")
+def feedback_batch(b: VoteBatch, request: Request):
+    """前端攒着的一次「本地改动」：一次请求把若干标签的最终票态同步上来。
+
+    每项都是 set 语义（vote=null 表示撤回），重复提交幂等 ——
+    页面离开时用 sendBeacon 发的那一发没等到响应，下次打开重发也不会多算。
+    """
+    ip = _client_ip(request)
+    if not _rate_ok(f"fb:{ip}", limit=30, window=60, table=_fb_hits):
+        raise HTTPException(429, "投得太频繁了，歇一分钟再来")
+    dom = _norm_domain(b.domain)
+    if len(dom) > 253 or not _DOMAIN_RE.match(dom):
+        raise HTTPException(400, "域名格式不对")
+    ip_hash = _hash_ip(ip)
+    _fb_ensure()
+    changed = 0
     with _lock:
-        _fb_index(rec)
-        with FEEDBACK.open("a", encoding="utf-8", newline="\n") as f:
-            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-        # 文件按体积滚动；内存计数保留，不受滚动影响
-        try:
-            if FEEDBACK.stat().st_size > FB_ROTATE_BYTES:
-                FEEDBACK.replace(FEEDBACK.with_name("feedback.jsonl.1"))
-        except OSError:
-            pass
-        return {"ok": True, "summary": json.loads(json.dumps(_fb_counts.get(dom, {})))}
+        for ch in b.votes[:200]:
+            if ch.tag_id not in TAG_BY_ID:
+                continue            # 前端比后端新时，未知标签跳过，不让整批失败
+            if _apply_vote(dom, ch.tag_id, ip_hash, ch.vote) != ch.vote:
+                _append_feedback(dom, ch.tag_id, ch.vote, ip_hash)
+                changed += 1
+        payload = _fb_payload(dom, ip_hash)
+    payload["changed"] = changed
+    return payload
+
+
+@app.get("/api/feedback/state")
+def feedback_state(domain: str, request: Request):
+    """计数 + 「我投了什么」。前端靠 mine 在换设备/清缓存后也认得出自己的票。"""
+    _fb_ensure()
+    dom = _norm_domain(domain)
+    ip_hash = _hash_ip(_client_ip(request))
+    with _lock:
+        return _fb_payload(dom, ip_hash)
 
 
 @app.get("/api/feedback/summary")

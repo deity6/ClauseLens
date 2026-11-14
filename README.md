@@ -140,8 +140,9 @@ $env:CLAUSELENS_EGRESS = "socks5h://127.0.0.1:1080"
 ### 运维
 
 ```bash
-# 更新后端代码
-ssh <主机别名> "cd ~/clauselens && git pull && sudo systemctl restart clauselens"
+# 更新后端代码（机器上不是 git checkout，直接传文件）
+scp backend/clauselens/api.py <主机别名>:~/clauselens/backend/clauselens/api.py
+ssh <主机别名> "sudo systemctl restart clauselens && systemctl is-active clauselens"
 
 # 看日志 / 内存
 ssh <主机别名> "journalctl -u clauselens -f"
@@ -174,7 +175,7 @@ npm run local                                     # = vite build && vite preview
 
 ### 两套主题
 
-| | 纸（默认，`data-theme="light"`） | 点阵（`data-theme="geek"`） |
+| | 纸（默认，`<html>` 上不写 data-theme） | 点阵（`data-theme="geek"`） |
 |---|---|---|
 | 气质 | 验光单 / 鉴定报告，暖纸 + 霞鹜文楷 | 纯黑 + 白（Quiet Dark）：大字、1px 发丝线、只有一个“白色强调” |
 | 背景 | 24px 网格 + 防伪花环 + 暖色光晕 + 噪点 | 顶部一段 22px 点阵（bencho `hero-dots` 移植，只铺首屏、不铺满）＋ 页脚点阵山脊 |

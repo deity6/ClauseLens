@@ -27,7 +27,7 @@ import "./theme-geek-components.css";
 
 import { applyTheme, getTheme, startSystemThemeSync } from "./lib/theme.js";
 
-// 主题：index.html 里的内联脚本已经在首帧前写过一次 data-theme（防闪白），
+// 主题：public/theme-boot.v2.js 已经在首帧前写过一次 data-theme（防闪白），
 // 这里再走一遍统一入口，把 color-scheme 与 <meta theme-color> 一并对齐。
 applyTheme(getTheme(), { persist: false });
 // 手机 / 平板：没手动选过主题时跟随系统深浅色（桌面不动）

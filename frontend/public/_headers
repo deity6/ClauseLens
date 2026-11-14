@@ -9,6 +9,12 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
+# 首帧主题引导脚本：路径带版本号（theme-boot.vN.js），一改逻辑就升版本。
+# 这条规则在 *.pages.dev 上有效；自定义域上 CF 的「浏览器缓存 TTL」会盖掉它（实测仍是 4h），
+# 所以别把正确性押在缓存头上——文件名换版本才是真办法。
+/theme-boot*.js
+  Cache-Control: public, max-age=0, must-revalidate
+
 /guilloche.svg
   Cache-Control: public, max-age=604800
 

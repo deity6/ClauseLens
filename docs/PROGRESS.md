@@ -798,3 +798,28 @@ found=0，只剩 registry 快照能用。所以之前很多「成功」其实是
 - 桌面（鼠标 + 宽屏）完全不变：默认浅色，手动选的主题照旧持久化。
 实测（CDP 模拟 iPhone 390×844）：系统 dark → `geek`；系统 light → `light`；会话中 light→dark 会实时切；
 桌面 1440 开 dark → 仍是 `light`。
+## 2026-11-14（第十五轮）· 投票可改可撤（本地即时 + 批量同步）+ 主题首帧兜底
+
+**① 投票不该点完就定死**（用户要求：一段时间内能改/取消，之后再「重置」继续投）。做法与上一轮不同：
+- **前端本地优先**：`lib/feedback.js` 模块级 store 存 `clauselens.vote.{domain}.{tag}`（`agree`/`disagree`/`none`），
+  投/改/撤都只写本机并立刻刷新界面，计数口径是「服务端计数 − 我上次那票 + 我现在这票」。
+- **同步攒批**：`pagehide`/`visibilitychange:hidden` 用 `sendBeacon` 发一次，下次打开 `loadVoteState()` 再补发，
+  页面一直开着则 5 分钟兜底一次。请求体是「最终状态」（`vote:null` 撤回），幂等，丢了重发不会多算。
+- **后端改成状态式**：`_voted` 从 set 改成 `(ip|domain|tag) → vote`；计数按「旧票减、新票加」调整，
+  `feedback.jsonl` 记变更（撤回记 `vote:null`），重启按顺序重放即可恢复。新增 `POST /api/feedback/batch`
+  与 `GET /api/feedback/state`（计入 `mine`），老的 `POST /api/feedback`、`GET /api/feedback/summary` 保持兼容。
+- 上一轮 `latestCnt` 缓存不需要了：状态在模块级 store 里，抽屉卸载重挂载不会退回。
+
+**② 移动端主题的两个真坑**（上一轮线上验证一直「light」的原因）：
+- 线上 CSP 是 `script-src 'self'`，**index.html 里的内联主题脚本被直接拦掉** → 改成外链 `public/theme-boot.v2.js`。
+- 文档开头 `matchMedia("(max-width:900px)")` 量到的是移动端默认 980px 视口 → 误判非移动；改成「移动 UA，
+  或粗指针 + `screen` 短边 ≤ 900」，`screen` 量不到才退回视口宽度。
+- `<html data-theme="light">` 写死会让「引导脚本没跑成」看起来和「算出来就是浅色」一样，React 会直接沿用这个值；
+  改成不写死，`getTheme()` 只认引导脚本留下的 `data-theme-boot` 标记，否则按规则自己算一遍（脚本被拦也能落到深色）。
+- `_headers` 给 `/theme-boot*.js` 写 `max-age=0`（在 `*.pages.dev` 上有效）；但自定义域上 CF 的浏览器缓存 TTL（4h）会盖掉它，实测 `_headers` 不生效——所以文件名带版本号（`theme-boot.v2.js`），逻辑一改就升 vN。
+
+**验收**（本地 preview + 本地后端；脚本在 `.tmp-inspect/`，结论已记在这里）：
+- `vote-accept.mjs`：0/0 → 认同 1/0（后端未变）→ 刷新后后端记到 agree → 撤回 0/0（后端仍旧）→
+  刷新后后端回 0/0 → 改投不认同 → 刷新后端 disagree → 清 localStorage 后从服务端认回「已记下」，全部断言通过。
+- `demo-vote.mjs`：`?demo=` 离线模式只写本机、`/api/feedback` 请求数 0，刷新后票还在。
+- `live-accept.mjs`：线上 iPhone 模拟 dark→`geek`、light→`light`、会话中切换实时跟、桌面 1440 开 dark 仍 `light`。

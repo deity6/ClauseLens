@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { DUR, EASE } from "../lib/motion.js";
 import { GROUPS, POLARITY } from "../lib/taxonomy.js";
-import { myVote, sendVote } from "../lib/feedback.js";
+import { displayCounts, localVote, setVote, subscribe } from "../lib/feedback.js";
 import { IconChevron, IconThumb, PolarityIcon } from "./Icons.jsx";
 
 // 证据高亮只用后端给的命中区间（quote 内偏移 [[a,b],...]）。
@@ -22,41 +22,19 @@ export function Highlight({ text, spans }) {
   return out;
 }
 
-// 最近一次已知的计数（进程内缓存）。
-// 抽屉开合会把 Votes 卸载再挂载，而父级传下来的 summary 是**页面加载时**那一份：
-// 重挂载时如果直接拿 summary，刚投的那一票就「消失」了（数字退回投票前），
-// 只有刷新页面才回来 —— 因为那时候 fetchSummary 已经包含它。
-// 所以每投一次都把最新计数记在这里，重挂载时优先用它；服务端返回权威值时再覆盖。
-const latestCnt = new Map();
-const cntKey = (domain, tagId) => `${domain}|${tagId}`;
-
-function Votes({ domain, tagId, summary, offline }) {
-  const k = cntKey(domain, tagId);
-  const [mine, setMine] = useState(() => myVote(domain, tagId));
-  const [cnt, setCnt] = useState(() => latestCnt.get(k) || summary || { agree: 0, disagree: 0 });
+// 票的状态放在 lib/feedback.js 的模块级单例里：抽屉开合会卸载/重挂载 Votes，
+// 只有放在外面才不会被「页面加载时那份 summary」冲掉。
+// 投完票不是定死：点另一项 = 改投，点同一项 = 撤回；同步交给 feedback.js 批量做。
+function Votes({ domain, tagId }) {
+  const [, bump] = useReducer((x) => x + 1, 0);
+  useEffect(() => subscribe(bump), []);
+  const mine = localVote(domain, tagId);
+  const cnt = displayCounts(domain, tagId);
   const [pulse, setPulse] = useState(null);
-  useEffect(() => {
-    const hit = latestCnt.get(k);
-    if (hit) {
-      setCnt(hit);
-      return;
-    }
-    setCnt(summary || { agree: 0, disagree: 0 });
-  }, [summary, k]);
-  const vote = async (v) => {
-    if (mine) return;
-    setMine(v);
+  const vote = (v) => {
+    const next = mine === v ? null : v;
+    setVote(domain, tagId, next);
     setPulse(v);
-    setCnt((c) => {
-      const next = { ...c, [v]: (c[v] || 0) + 1 };
-      latestCnt.set(k, next);
-      return next;
-    });
-    const s = await sendVote({ domain, tag: tagId, vote: v, offline });
-    if (s && s[tagId]) {
-      latestCnt.set(k, s[tagId]);
-      setCnt(s[tagId]);
-    }
   };
   return (
     <div className="votes">
@@ -69,7 +47,6 @@ function Votes({ domain, tagId, summary, offline }) {
           key={v}
           type="button"
           className={`vote ${mine === v ? "is-mine" : ""}`}
-          disabled={!!mine}
           aria-pressed={mine === v}
           onClick={() => vote(v)}
           animate={pulse === v ? { scale: [1, 1.18, 1] } : {}}
@@ -82,7 +59,11 @@ function Votes({ domain, tagId, summary, offline }) {
           </motion.b>
         </motion.button>
       ))}
-      {mine && <span className="votes__thanks meta">已记下 · THANKS</span>}
+      {mine && (
+        <span className="votes__thanks meta">
+          已记下 · <span className="votes__hint">点同一项可取消，点另一项可改</span>
+        </span>
+      )}
     </div>
   );
 }
@@ -100,7 +81,7 @@ const detailItem = {
   exit: { opacity: 0, y: 4, filter: "blur(5px)", transition: { duration: 0.2, ease: "easeIn" } },
 };
 
-function TagDetail({ tag, meta, docs, domain, summary, offline, onJump }) {
+function TagDetail({ tag, meta, docs, domain, onJump }) {
   const [more, setMore] = useState(false);
   const ev = tag.evidence || [];
   const shown = more ? ev : ev.slice(0, 1);
@@ -141,13 +122,13 @@ function TagDetail({ tag, meta, docs, domain, summary, offline, onJump }) {
         {tag.provisional ? <span className="meta"> · 程序推测，待确认</span> : null}
       </motion.div>
       <motion.div variants={detailItem}>
-        <Votes domain={domain} tagId={tag.id} summary={summary} offline={offline} />
+        <Votes domain={domain} tagId={tag.id} />
       </motion.div>
     </motion.div>
   );
 }
 
-export default function TagWall({ tags, taxonomy, docs, domain, summary, offline, onJump }) {
+export default function TagWall({ tags, taxonomy, docs, domain, onJump }) {
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(null);
   const groups = GROUPS.map((g) => ({
@@ -227,8 +208,6 @@ export default function TagWall({ tags, taxonomy, docs, domain, summary, offline
                     meta={taxonomy.byId[openTag.id]}
                     docs={docs}
                     domain={domain}
-                    summary={summary?.[openTag.id]}
-                    offline={offline}
                     onJump={onJump}
                   />
                 </motion.div>

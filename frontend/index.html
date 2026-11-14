@@ -1,26 +1,18 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="light">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#ffffff" />
     <!-- 主题要在首帧之前定下来，否则会先闪一下浅色再变深。
-         优先级：用户手动选过（localStorage）> 移动端跟随系统深浅色 > 桌面浅色。 -->
-    <script>
-      try {
-        var t = localStorage.getItem("cl:theme");
-        if (t !== "light" && t !== "geek") {
-          var narrow = matchMedia("(max-width: 900px)").matches;
-          var coarse = matchMedia("(pointer: coarse)").matches;
-          var ua = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS|MiuiBrowser/i.test(navigator.userAgent || "");
-          var mobile = narrow && (coarse || ua);
-          t = mobile && matchMedia("(prefers-color-scheme: dark)").matches ? "geek" : "light";
-        }
-        document.documentElement.dataset.theme = t;
-        document.documentElement.style.colorScheme = t === "geek" ? "dark" : "light";
-      } catch (e) {}
-    </script>
+         逻辑在 /theme-boot.v2.js（外部文件而不是内联脚本：线上 CSP 是 script-src 'self'，内联会被拦）。
+         优先级：用户手动选过（localStorage）> 移动端跟随系统深浅色 > 桌面浅色。
+         注意 <html> 上不再写死 data-theme="light"：浅色本来就是 CSS 的默认值，写死反而会让
+         「引导脚本没跑成」的样子和「算出来就是浅色」分不开——React 侧会把这个值当成已有结论直接沿用。
+         文件名带版本号：自定义域上 CF 的浏览器缓存 TTL（4h）会盖过 _headers 里给该路径写的 Cache-Control，
+         逻辑一改就升 vN，别指望旧 URL 立刻换新。 -->
+    <script src="/theme-boot.v2.js"></script>
     <title>ClauseLens 条款透镜 · 注册前，先看看你同意了什么</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='14' cy='14' r='9' fill='none' stroke='%23c2412d' stroke-width='3'/%3E%3Cpath d='M21 21l7 7' stroke='%23c2412d' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
   </head>

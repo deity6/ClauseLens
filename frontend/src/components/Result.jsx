@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useAnimationControls, useReducedMotion } from "motion/react";
 import { DUR, EASE } from "../lib/motion.js";
 import { POLARITY } from "../lib/taxonomy.js";
-import { fetchSummary } from "../lib/feedback.js";
+import { loadVoteState } from "../lib/feedback.js";
 import { fmtChars, fmtMinutes } from "../lib/format.js";
 import { IconAlert } from "./Icons.jsx";
 import CountUp from "./CountUp.jsx";
@@ -54,7 +54,6 @@ function Section({ n, en, title, children, className = "" }) {
 export default function Result({ result, taxonomy, offline, onAgain }) {
   const reduce = useReducedMotion();
   const shake = useAnimationControls();
-  const [summary, setSummary] = useState({});
   const [focus, setFocus] = useState(null);
   const [readerOpen, setReaderOpen] = useState(false);
   const jumpSeq = useRef(0);
@@ -64,7 +63,8 @@ export default function Result({ result, taxonomy, offline, onAgain }) {
   const domain = site.domain;
 
   useEffect(() => {
-    if (!offline) fetchSummary(domain).then(setSummary);
+    // 计数 + 我投过什么；顺手把上回没同步上去的票补发一次
+    loadVoteState(domain, { offline });
   }, [domain, offline]);
 
   const tagsByDim = useMemo(() => {
@@ -184,7 +184,7 @@ export default function Result({ result, taxonomy, offline, onAgain }) {
       {result.tags.length > 0 && (
       <Section n="02" en="FINDINGS" title="条款里写了什么">
         <p className="rsec__lead">点开任一标签，看它对你意味着什么、原文怎么写的。</p>
-        <TagWall tags={result.tags} taxonomy={taxonomy} docs={docs} domain={domain} summary={summary} offline={offline} onJump={result.texts ? jump : null} />
+        <TagWall tags={result.tags} taxonomy={taxonomy} docs={docs} domain={domain} onJump={result.texts ? jump : null} />
       </Section>
       )}
 
