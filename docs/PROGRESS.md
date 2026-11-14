@@ -690,3 +690,26 @@ found=0，只剩 registry 快照能用。所以之前很多「成功」其实是
 页面滚 180px / 正文框滚 520×3 段，两层克隆 transform 每次都变（内容跟手）；长文 8.6k px 文档换 tab
 重建克隆 ≈26ms；`prefers-reduced-motion` 下译文照样出现；移动端 390×844 不横向溢出、球在槽心。
 `npm run build` 0 error。
+---
+
+## 2026-11-14（第十轮）· 主题开关加大 + 太阳/月亮；像素转场找回
+
+用户两条：①「右上角主题切换的按钮有点小了，标志内容也不符合（一个浅色一个深色，用月亮之类的就行）」；
+②「切换的那个过渡动效没了」。
+
+**转场消失的真凶**：`theme-geek.css` 里 `.topbar__right { … }` 后面多了一个 `}`（旧 .tswitch 删样式时留下的）。
+它让后面的规则整段错位 —— `.theme-wipe`、`.cl-sweep`、`@keyframes cl-sweep-in`，以及再往后的
+`.asc` / `.scorebadge` / `.ridgefoot` 全被浏览器丢掉。实测：画布在 DOM 里但计算值 `position: static`，
+于是那块 1440×1000 的 canvas 跑到页面末尾，像素铺/擦在屏幕外自己演完。删掉多余花括号即恢复
+（`position: fixed; z-index: 60`），铺 + 擦两个方向分别截图验过：`out/shots/wipe/wipe-*.png`。
+同一段被吃掉的 geek 评分徽章（ASCII 点阵 C）与页脚点阵山脊也一起回来了。
+
+**开关**：
+- 尺寸 0.62 → 0.84：轨道 57×28.5 → 77×39，水滴 36→30px、图标 16→18px（缩放后 15px）。
+  仍不改 `TRACK/THUMB` 几何常量，只在 `.liq-scale` 上调系数；指针数学本来就按 `getBoundingClientRect` 折算。
+- 图标换成**太阳 / 月亮**（原来「纸 / 点阵」两枚语义不清，用户点名要月亮）。月亮用两条圆相减的 mask
+  切出月牙（比手算 path 稳）；图标圆心仍在 23 / 69，padding 15 → 14 以对上 18px 图标。
+- `aria-label` 随状态变：`切换到浅色主题` / `切换到深色主题`。
+
+**验收**：点按与拖拽都能切（拖到右端只触发一次）；`prefers-reduced-motion` 下仍按设计直接切不播动画；
+`npm run build` 0 error。

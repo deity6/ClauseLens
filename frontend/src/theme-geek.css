@@ -218,8 +218,6 @@ html[data-theme="geek"]::before {
   }
 }
 
-}
-
 /* ── 5 转场遮罩 + 内容浮现（像素落幕，lm-detector 的 bayer4/blocks） ── */
 .theme-wipe {
   position: fixed;

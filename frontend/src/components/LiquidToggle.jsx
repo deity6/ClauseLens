@@ -84,50 +84,45 @@ const MID_X = (SHUT_X + OPEN_X) / 2;
    the whole component is about liquid. */
 
 /* ── 轨道里的两枚图标（本站加的一层）─────────────────────
-   纸（= light 主题）/ 点阵（= geek 主题），16px 内联 SVG，不引图标库。
+   浅色 = 太阳，深色 = 月亮（用户：「一个是浅色，另一个是深色，用月亮之类的就行了」）。
+   18px viewBox 的内联 SVG，不引图标库。
    为什么必须另起一层：goo 滤镜按 alpha 阈值，字形会被吃掉——上面那句
    "an unfiltered layer above it carrying the text" 说的就是这件事。
    本站其实没挂 #liq-goo，但分层照原样留着，将来谁把滤镜加回来都不会坏。
 
    位置按轨道的几何算：拇指停稳时正好盖住自己那一侧的图标
-   （96 的一半——5 + 36/2 = 23，和 92 − 5 − 36/2 = 69），于是"看得见的那枚"
-   永远是可以去的那一侧，"被吞掉的那枚"是当前所在的一侧——液态开关把当前
+   （左停 x=5..41、右停 x=51..87，图标圆心取 23 / 69），于是「看得见的那枚」
+   永远是可以去的那一侧，「被吞掉的那枚」是当前所在的一侧——液态开关把当前
    状态吞进水滴里，这比在拇指上画个标记更像这个组件本身。 */
-const GlyphPaper = () => (
+const GlyphSun = () => (
   <svg
     className="liq-ico"
-    viewBox="0 0 16 16"
-    width="16"
-    height="16"
+    viewBox="0 0 18 18"
+    width="18"
+    height="18"
     fill="none"
     stroke="currentColor"
     strokeWidth="1.4"
     strokeLinecap="round"
-    strokeLinejoin="round"
     aria-hidden="true"
     focusable="false"
   >
-    <path d="M4.3 2H9.4L12.4 5V14H4.3Z" />
-    <path d="M9.4 2.2V5.2H12.3" />
-    <path d="M6.4 8.5H10.2M6.4 11H8.8" />
+    <circle cx="9" cy="9" r="3.5" />
+    <path d="M9 1.7v1.6M9 14.7v1.6M1.7 9h1.6M14.7 9h1.6M3.8 3.8l1.15 1.15M13.05 13.05l1.15 1.15M14.2 3.8l-1.15 1.15M4.95 13.05L3.8 14.2" />
   </svg>
 );
 
-const GlyphDot = () => (
-  <svg className="liq-ico" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false">
-    {[0, 1, 2].map((r) =>
-      [0, 1, 2].map((c) => (
-        <rect
-          key={`${r}-${c}`}
-          x={3.1 + c * 3.6}
-          y={3.1 + r * 3.6}
-          width="2.5"
-          height="2.5"
-          rx={r === c ? 0 : 0.6}
-          opacity={r === 1 && c === 1 ? 1 : 0.55}
-        />
-      ))
-    )}
+// 月亮：遮罩切出来的月牙（两条圆相减），比手算 path 稳，也更像「暗色」那一侧
+const GlyphMoon = () => (
+  <svg className="liq-ico" viewBox="0 0 18 18" width="18" height="18" aria-hidden="true" focusable="false">
+    <defs>
+      <mask id="liq-moon-cut">
+        <rect width="18" height="18" fill="#000" />
+        <circle cx="9" cy="9" r="6.3" fill="#fff" />
+        <circle cx="12.6" cy="6.5" r="5.6" fill="#000" />
+      </mask>
+    </defs>
+    <rect width="18" height="18" fill="currentColor" mask="url(#liq-moon-cut)" />
   </svg>
 );
 
@@ -406,7 +401,7 @@ export function LiquidToggle({
           data-on={on}
           role="switch"
           aria-checked={on}
-          aria-label="切换主题"
+          aria-label={on ? "切换到浅色主题" : "切换到深色主题"}
           onPointerDown={down}
           onPointerMove={move}
           onPointerUp={up}
@@ -425,8 +420,8 @@ export function LiquidToggle({
           </span>
           {/* 图标层在 blobs 后面：不带滤镜的一层，且永远盖在拇指之上 */}
           <span className="liq-icons" aria-hidden="true">
-            <GlyphPaper />
-            <GlyphDot />
+            <GlyphSun />
+            <GlyphMoon />
           </span>
         </button>
       </div>

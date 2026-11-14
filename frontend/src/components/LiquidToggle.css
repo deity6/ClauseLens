@@ -199,18 +199,21 @@
 }
 
 /* ════ 接入本站（以下是本站加的，不属于 Bencho 原样式表）═════════
-   三件事：① 按 0.62 缩到顶栏尺寸；② 轨道里的两枚图标；③ 那条发丝线。 */
+   三件事：① 按 0.84 缩到顶栏尺寸；② 轨道里的两枚图标；③ 那条发丝线。 */
 
-/* ── ① 缩小：92×46 → ~57×28 ────────────────────────────────
-   transform 不改布局盒，所以外层 .liq-scale 直接按 0.62 把盒子折小
-   （92×0.62 ≈ 57，46×0.62 ≈ 28.5），内层 .liq-well 保持 92×46 再由
+/* ── ① 缩小：92×46 → ~77×39 ────────────────────────────────
+   transform 不改布局盒，所以外层 .liq-scale 直接按 0.84 把盒子折小
+   （92×0.84 ≈ 77，46×0.84 ≈ 38.6），内层 .liq-well 保持 92×46 再由
    transform 缩下去 —— 不这么做，46px 的轨道会把顶栏顶高。
+
+   0.62 那档（57×28.5）用户反馈「按钮有点小、里面图标看不清」，抬到 0.84：
+   轨道 77×39、水滴 30px、图标 18→15px，仍然在顶栏 44px 的品牌行之内。
 
    为什么不改 TRACK/THUMB 常量：那是几何，拖动距离、水滴直径、指针数学
    全都读它；缩放是"呈现多大"，只该留在外层。组件里的 local() 用
    getBoundingClientRect().width / offsetWidth 已经把系数除掉了。 */
 .liq-scale {
-  --liq-k: 0.62;
+  --liq-k: 0.84;
   flex: none;
   display: grid;
   place-items: center;
@@ -223,31 +226,24 @@
   transform-origin: 50% 50%;}
 
 /* ── ② 图标层：不带 goo 滤镜的那一层 ───────────────────────
-   两枚 16px 的内联 SVG（纸 / 点阵），左右各一，居中在轨道里。
+   两枚 18px 的内联 SVG（太阳 = 浅色 / 月亮 = 深色），左右各一，居中在轨道里。
    层级：排在 .liq-sw-blobs 之后 = 画在它上面，所以永远不会被水滴吃掉
    （带滤镜的那层会按 alpha 阈值把字形削没，这句在文件上半部分说过两次）。
 
    位置不是随便留白的：拇指停稳时正好停在自己那一侧的图标上
    （左停 x=5..41、右停 x=51..87，图标圆心取 23 / 69）——所以"当前状态"那枚
-   图标永远是被水滴托着的那一枚。颜色：活跃一侧 --paper，另一侧 --ink-3。
-
-   两种主题下活跃那枚的表现不一样，这是 --paper + 水滴底色的必然结果：
-     light（OFF，水滴是 19% 墨的灰）→ 白图标浮在灰水滴上，像被水滴刻出来的；
-     geek（ON，水滴是 --paper 的黑）→ 黑图标压在黑水滴上，整个融进去。
-   后一种在 1px 尺度上读起来就是"这枚图标属于水滴"，不影响开关本身的辨识；
-   如果希望它两边都清楚，把下面 `.liq-sw[data-on="true"] .liq-icons > .liq-ico:last-child`
-   那句的 `var(--paper)` 改成 `var(--ink-3)` 即可（一行）。 */
+   图标永远是被水滴托着的那一枚。颜色：活跃一侧 --ink，另一侧 --ink-3。 */
 .liq-icons {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 15px;          /* 图标圆心落在 23 / 69：15 + 8 = 23，92 − 15 − 8 = 69 */
+  padding: 0 14px;          /* 图标圆心落在 23 / 69：14 + 9 = 23，92 − 14 − 9 = 69 */
   color: var(--ink-3);
   pointer-events: none;     /* 拖拽/点击仍然落在 .liq-sw 上（指针数学按按钮算） */
   transition: color 420ms ease;}
-.liq-ico { display: block; }
+.liq-ico { display: block; flex: none; }
 .liq-sw[data-on="false"] .liq-icons > .liq-ico:first-child { color: var(--ink); }
 .liq-sw[data-on="true"] .liq-icons > .liq-ico:last-child { color: var(--ink); }
 
