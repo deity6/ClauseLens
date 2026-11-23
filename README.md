@@ -125,8 +125,8 @@ python scripts/eval_zh.py test       # 中文规则层 + CAPP-130 主题级
 配一个境外出口就能救回来，直连**成功时完全不经过它**：
 
 ```powershell
-# 1) 借 InstaBox 云容器的 exec 跑 curl —— 不发布端口、无常驻进程
-$env:CLAUSELENS_EGRESS = "instabox:<machine-id>"
+# 1) 借 海外云容器的 exec 跑 curl —— 不发布端口、无常驻进程
+$env:CLAUSELENS_EGRESS = "cloud:<machine-id>"
 
 # 2) 或者自己起一个 SOCKS 隧道（必须是 socks5h，让远端解析域名）
 ssh -D 127.0.0.1:1080 -N <your-overseas-host>
@@ -149,8 +149,8 @@ $env:CLAUSELENS_EGRESS = "socks5h://127.0.0.1:1080"
 |---|---|
 | 站点 | <https://lens.dohub.tech> |
 | 前端 | Cloudflare Pages（`frontend/dist`），`/api/*` 由 Pages Function 同源代理 |
-| 后端 | AWS 新加坡 t3.micro，systemd `clauselens.service`，Caddy 443 反代到 `127.0.0.1:8787` |
-| 仓库 | <https://github.com/deity6/ClauseLens>（私有） |
+| 后端 | 2h2gaws服务器，systemd `clauselens.service`，Caddy 443 反代到 `127.0.0.1:8787` |
+| 仓库 | <https://github.com/deity6/ClauseLens> |
 
 架构：
 
@@ -175,7 +175,7 @@ cd frontend && npm run build && npx wrangler pages deploy dist --project-name cl
 
 # 说明：Pages 项目是 direct upload，没有接 Git —— git push 不会自动上线；
 # 跑上面这条才会更新 production（自定义域 lens.dohub.tech 自动跟随 canonical deployment）。
-# 只想部署、不想装 wrangler 全局：用 npx（本机已缓存 wrangler@3.114.0）。
+# 只想部署、不想装 wrangler 全局：用 npx。
 ```
 
 ### 本地跑「线上版本」（与 CF Pages 同构）
@@ -197,13 +197,13 @@ npm run local                                     # = vite build && vite preview
 
 ### 两套主题
 
-| | 纸（默认，`<html>` 上不写 data-theme） | 点阵（`data-theme="geek"`） |
+| | 浅色-纸（默认） | 深色-像素配色（`data-theme="geek"`） |
 |---|---|---|
-| 气质 | 验光单 / 鉴定报告，暖纸 + 霞鹜文楷 | 纯黑 + 白（Quiet Dark）：大字、1px 发丝线、只有一个“白色强调” |
-| 背景 | 24px 网格 + 防伪花环 + 暖色光晕 + 噪点 | 顶部一段 22px 点阵（只铺首屏、不铺满）＋ 页脚点阵山脊 |
+| 气质 | 鉴定报告，暖纸背景色 + 霞鹜文楷 | 黑 + 白 撞色（Quiet Dark）：大字、1px 发丝线、强调白 |
+| 背景 | 24px 网格 + 背景图标花环 + 暖色光晕 + 噪点 | 顶部一段 22px 点阵（只铺首屏、不铺满）＋ 页脚点阵山脊 |
 | 字体 | 楷体标题 / Instrument Serif 数字 / Space Mono 标签 | Inter（自托管）+ 系统中文黑体，等宽只留机器读数 |
-| 评分徽章 | 圆形钢印（等级色） | ASCII 点阵屏：等级字母用圆点画出来，鼠标扫过会冒字符 |
-| 切换 | — | 右上角分段开关；4px 像素格 + Bayer 抖动的「像素落幕」转场 |
+| 评分徽章 | 圆形评分章（等级色） | ASCII 点阵字母：等级字母用圆点画出来，鼠标扫过会冒字符 |
+| 切换 | — | 右上角分段开关；4px 像素格 + 「像素落幕」转场 |
 
 实现细节写在 `docs/design/theme-geek.md`。看转场逐帧：
 
@@ -211,16 +211,8 @@ npm run local                                     # = vite build && vite preview
 node scripts/wipe-frames.mjs 'http://127.0.0.1:4173/' out/shots/wipe --from=light --to=geek
 ```
 
-### 资源限制（908 MB 机器上的取舍）
-
-- `MemoryHigh=600M` / `MemoryMax=750M`（systemd），超了自动重启而不是拖垮整机
-- 分析并发 `BoundedSemaphore(3)`，超过的直接返回 `busy`
-- 渲染器 Chromium 用 `--single-process`（实测 480 MB → 280 MB），崩了自动退回多进程重试
-- 请求体上限 256 KB（Caddy）
-
 ### 已知缺口
 
-- 服务器**没有装 playwright** 之前的状态已修（现在装了，`~/.cache/ms-playwright`）
 - 未配置 `CLAUSELENS_EGRESS`：被墙站点会报「连不上」。要开就在 systemd unit 里加
   `Environment=CLAUSELENS_EGRESS=instabox:<machine-id>`
 - 渲染只覆盖「正文 < 400 字才触发」，且一次分析最多 3 页
@@ -232,17 +224,14 @@ node scripts/wipe-frames.mjs 'http://127.0.0.1:4173/' out/shots/wipe --from=ligh
 ## 许可与数据来源
 
 - 代码：**MIT**，见 [LICENSE](LICENSE)。
-  MIT 的义务只有一条：**再分发代码或构建产物时，保留版权声明与许可全文**（`LICENSE` 跟着走就行）；
-  它不要求在网页界面上显著署名（那是 CC BY 那类协议的要求）。
-- 第三方组件、网页字体与借鉴实现的许可：见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)
-  （React / motion 为 MIT；Inter / Instrument Serif / Space Mono / Noto Sans SC / 霞鹜文楷为 OFL-1.1，全文随仓库附带）。
-- 标签体系参考 ToS;DR（CC BY-SA 4.0 的部分见 `docs/research/`）；条款样本只用于演示：
-  `frontend/src/data/sample-baidu.json` / `sample-github.json` 是各自站点条款的原文摘录，
-  版权归原站（GitHub 条款本文按 CC0 发布；百度条款仅作离线演示，不作再分发用途）。
+  MIT 的义务只有一条：**再分发代码或构建产物时，保留版权声明与许可全文**。
+- 部分组件实现： [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)
+- 标签体系参考 ToS;DR（CC BY-SA 4.0 的部分见 `docs/research/`）；条款样本用于演示：
+  `frontend/src/data/sample-baidu.json` / `sample-github.json` 是各自站点条款的原文摘录。
 - 中文标注指南与划分文件（`data/processed/`）随仓库一起发布，同一许可。
 
 ## 隐私
 
-- 站点不做账号、不写 cookie、不接第三方统计脚本以外的追踪；页面浏览统计用 Cloudflare Web Analytics（无 cookie）。
+- 站点不做账号、不写 cookie、不接第三方统计脚本以外的追踪。
 - 投票只存 `domain / tag_id / vote / at` 与 `ip_hash`（`sha1(服务端随机盐 | IP)[:12]`，盐不随代码发布），
-  用途仅限「一人一标签一票」去重与限流；**不保存明文 IP**。如果你不希望留下这条记录，请不要投票。
+  用途仅限「一人一标签一票」去重与限流；**不保存 IP**。如果你不希望留下这条记录，请不要投票。
