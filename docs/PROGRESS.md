@@ -852,3 +852,17 @@ CSP 只报 Cloudflare 自己注入的 inline/beacon（站点脚本正常执行�
 
 **还没做（按收益排序）**：字体减负（490 KB → 只留标题用子集/手机退回系统楷体）、HTML 边缘缓存 + 部署后 purge、
 API 直连省掉 Pages Function 那一跳。CF 优选/换线路是最后手段（本机出口抽样没找到更近的 colo）。
+
+## 2026-11-23 · 打开 Web Analytics（之前被 CSP 静默拦掉）+ 隐私清理后推私有仓库
+
+- **Web Analytics**：cloudflare zone `dohub.tech` 的 RUM 一直开着（`auto_install: true`，Pages 返回的 HTML 里
+  会被注入 `static.cloudflareinsights.com/beacon.min.js`），但站点 CSP 是 `script-src 'self'`，
+  **beacon 一直被浏览器拦掉**——控制台有违规、后台收不到数据。现在 `script-src` 放行
+  `https://static.cloudflareinsights.com`，`connect-src` 放行 `https://cloudflareinsights.com`。
+  实测：beacon 200、`/cdn-cgi/rum` POST 200；GraphQL `rumPageloadEventsAdaptiveGroups` 当天已有
+  17 次页面浏览 / 2 次访问（含当次验证）。CSP 里剩下的唯一违规是 Cloudflare 自己注入的 inline challenge，和站点无关。
+- **隐私清理**（推 GitHub 前）：`data/.vote_salt` 从版本库移除并加进 `.gitignore`
+  （盐值 + 32 位 IP 空间 = 可离线撞出真实 IP）；PROGRESS / 安全评审里的本人出口 IP、`frontend.md` 里的
+  `C:\Users\<user>` 本机路径、`.env.example` 的 InstaBox 容器 ID 全部换成占位。
+  注意：盐在历史提交里还有（私有仓库可接受；哪天转公开要先 purge 历史）。
+- 仓库 `github.com/deity6/ClauseLens`（私有）已更新到 `52259ed`。
