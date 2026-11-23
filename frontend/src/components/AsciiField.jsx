@@ -1,5 +1,5 @@
-// ASCII 点阵场 —— 移植自 Bencho 的 MIT 组件（ascii.txt 里的 `ASCIIWake.tsx`，bencho.dev/licence）。
-// 保留了它的全部注释与参数语义；改动只有三处，都是为了接到本项目里：
+// ASCII 点阵场：把文本光栅化成圆点掩膜，悬停时点会变成字符梯度，松手按 trail 冷却。
+// 三处适配：
 //   ① 尺寸不再写死 360×240，改成跟随容器（ResizeObserver），并能传 own mask；
 //   ② 第 4 节「你要判断的部分」：--fill-on / --ink 直接映射到本项目的 --ink（见 theme-geek.css），
 //      不再定义新全局；

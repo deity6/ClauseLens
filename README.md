@@ -200,13 +200,12 @@ npm run local                                     # = vite build && vite preview
 | | 纸（默认，`<html>` 上不写 data-theme） | 点阵（`data-theme="geek"`） |
 |---|---|---|
 | 气质 | 验光单 / 鉴定报告，暖纸 + 霞鹜文楷 | 纯黑 + 白（Quiet Dark）：大字、1px 发丝线、只有一个“白色强调” |
-| 背景 | 24px 网格 + 防伪花环 + 暖色光晕 + 噪点 | 顶部一段 22px 点阵（bencho `hero-dots` 移植，只铺首屏、不铺满）＋ 页脚点阵山脊 |
+| 背景 | 24px 网格 + 防伪花环 + 暖色光晕 + 噪点 | 顶部一段 22px 点阵（只铺首屏、不铺满）＋ 页脚点阵山脊 |
 | 字体 | 楷体标题 / Instrument Serif 数字 / Space Mono 标签 | Inter（自托管）+ 系统中文黑体，等宽只留机器读数 |
-| 评分徽章 | 圆形钢印（等级色） | ASCII 点阵屏：等级字母用圆点画出来，鼠标扫过会冒字符（`ascii.txt` 的 ASCIIWake，MIT） |
-| 切换 | — | 右上角分段开关；4px 像素格 + Bayer 抖动的「像素落幕」转场（lm-detector 的 `bayer4`/`blocks`） |
+| 评分徽章 | 圆形钢印（等级色） | ASCII 点阵屏：等级字母用圆点画出来，鼠标扫过会冒字符 |
+| 切换 | — | 右上角分段开关；4px 像素格 + Bayer 抖动的「像素落幕」转场 |
 
-实现与来源都写在 `docs/design/theme-geek.md`；调研（哪段代码从哪个仓库搬的、参数是多少）在
-`docs/design/theme-geek-refs.md` 与 `out/ref/refs-2.md`。看转场逐帧：
+实现细节写在 `docs/design/theme-geek.md`。看转场逐帧：
 
 ```powershell
 node scripts/wipe-frames.mjs 'http://127.0.0.1:4173/' out/shots/wipe --from=light --to=geek

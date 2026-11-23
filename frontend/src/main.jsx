@@ -12,7 +12,7 @@ import "lxgw-wenkai-webfont/lxgwwenkai-bold.css";
 import "@fontsource/instrument-serif/latin-400.css";
 import "@fontsource/space-mono/latin-400.css";
 import "@fontsource/space-mono/latin-700.css";
-// 主题 B 的正文/标题字体：SOFT LAB 与 lm-detector 用的都是 grotesque（Inter / Geist），
+// 主题 B 的正文/标题字体用 grotesque（Inter），
 // 中文交回系统黑体（PingFang / 雅黑），不额外拉中文字体包。
 import "@fontsource-variable/inter/wght.css";
 

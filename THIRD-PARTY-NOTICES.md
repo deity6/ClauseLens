@@ -592,6 +592,4 @@ SOFTWARE.
 ## 4. 数据与参考实现
 
 - **ToS;DR**（<https://tosdr.org>）：标签体系与部分英文标注参考自其公开语料（CC BY-SA 4.0 的部分见 `docs/research/`）。
-- **gl-transitions**（<https://github.com/gl-transitions/gl-transitions>，MIT）：主题转场的 Disintegrate / PolkaDotsCurtain / DirectionalWipe 三个思路。
-- **lm-detector**（<https://github.com/Ikaleio/lm-detector>）、**bencho.dev**（<https://bencho.dev>）、**Rice-dog/code-codex**（<https://github.com/Rice-dog/code-codex>）：点阵背景、磁点、ASCII 评分徽章等视觉实现的参考，逐条对照（含搬了哪些参数）写在 `docs/design/theme-geek-refs.md`；上游许可以各自仓库为准。
 - 条款样本 `frontend/src/data/sample-*.json` 是各站条款的原文摘录，版权归原站，仅用于离线演示。

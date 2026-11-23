@@ -1,8 +1,7 @@
 // 评分徽章：纸主题还是那枚圆形钢印；点阵主题换成「用点阵画出来的等级字母」。
 //
-// 用的就是 ascii.txt 里那套 ASCII wake 的算法（见 AsciiField.jsx）：
-// 字母先被光栅化成一张掩膜，掩膜里的格子是圆点，鼠标划过去会把点变成字符（@ # + …）再慢慢退回去。
-// 这比再画一个方框+字母更像那个站的做法：徽章本身就是一块点阵屏。
+// 算法见 AsciiField.jsx：字母先被光栅化成一张掩膜，掩膜里的格子是圆点，
+// 鼠标划过去会把点变成字符（@ # + …）再慢慢退回去 —— 徽章本身就是一块点阵屏。
 import { useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import Stamp from "./Stamp.jsx";

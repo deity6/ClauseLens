@@ -477,7 +477,7 @@ found=0，只剩 registry 快照能用。所以之前很多「成功」其实是
 - 两套主题并存：`<html data-theme="light|geek">`，默认浅色，选择记 `localStorage['cl:theme']`，
   `index.html` 有一条内联脚本在首帧前落地（防闪白），不跟随系统。
 - 右上角两段式开关（纸 / 点阵），`aria-pressed`，点击触发像素转场；转场进行中不响应连点。
-- 转场：`frontend/src/lib/theme-wipe.js`，**照 Ikaleio/lm-detector 的像素着色器改写**——
+- 转场：`frontend/src/lib/theme-wipe.js`，**像素落幕（片元着色器按格量化）**——
   `bayer4()` 有序抖动 + `blocks()` 逐块显现/擦除 + canvas 每格=1 设备像素靠 `image-rendering: pixelated`
   放大 + `steps(15fps)` 时间量化。4px 一格，560ms 铺满 → 换主题（藏在底下）→ 520ms 反向擦掉，
   新正文按 x 错峰浮现。**不再用自制粒子/扫描线**（第一版是粒子帷幕，用户要求改成参考站的像素效果，已替换）。
@@ -520,8 +520,8 @@ found=0，只剩 registry 快照能用。所以之前很多「成功」其实是
 | 搬什么 | 从哪搬 |
 |---|---|
 | 色板 / 字体层级 / 圆角 / 缓动 / 卡片 hover / 底部强调条 | SOFT LAB <https://doit.loc.cc>（开源 `github.com/deity6/softlab` 的 `src/styles/index.css`） |
-| 点阵背景（静态 CSS + canvas 磁吸/涟漪）、分段控件、胶囊按钮、面板 | bencho.dev 的 `hero-dots`（bundle 逐行还原到 `DotsBackdrop.jsx`） |
-| 像素落幕转场 | lm-detector（`bayer4` + `blocks`） |
+| 点阵背景（静态 CSS + canvas 磁吸/涟漪）、分段控件、胶囊按钮、面板 | `DotsBackdrop.jsx` + `theme-geek-components.css` |
+| 像素落幕转场 | `theme-wipe.js`（`bayer4` 抖动 + `blocks` 碎块） |
 | 「近黑 + 大字 + 发丝线 + 一个冷色强调」的语法 | tailark/blocks（`--background: zinc-950`、`--border: foreground/7.5%`、radius .5rem） |
 
 **改了什么**
@@ -529,7 +529,7 @@ found=0，只剩 registry 快照能用。所以之前很多「成功」其实是
 - `theme-geek.css` 全部换 token：`#0b0e14 / #070910 / #171c28 / #e8ecf4 / #a3adc0 / #7d8899`、
   `--line: rgb(255 255 255/.1)`、`--accent: #7aa9ff`（`#3b82f6` 在深底只 3.4:1，不用）、圆角 10–18px、按钮胶囊。
 - 背景两层：`.dotsstatic`（纯 CSS `radial-gradient(rgba(var(--ink-rgb),.13) 1px)` / 22px 步距）
-  + `.dotsbackdrop`（bencho 的 canvas，静息 alpha=0，只负责磁吸与点击涟漪），两层都套上下渐隐 mask。
+  + `.dotsbackdrop`（canvas，静息 alpha=0，只负责磁吸与点击涟漪），两层都套上下渐隐 mask。
 - 字体：装 `@fontsource-variable/inter`，栈照 SOFT LAB（`Inter / Helvetica Neue / PingFang SC / 微软雅黑`）；
   去掉 `-webkit-font-smoothing: antialiased`（原站也没有）；等宽只留机器读数。
 - 删掉 v1 的装饰语言：四角角标、括号、刻度尺、虚线、扫描纹、竖排水印、20 段维度条、点阵文档行。
@@ -549,15 +549,15 @@ found=0，只剩 registry 快照能用。所以之前很多「成功」其实是
 
 ## 2026-11-13（第三轮）· 纯黑白 + ASCII 评分徽章 + 页脚点阵山脊
 
-**用户要求**：深色主题改纯黑+白（参照 bencho）；评分徽章用 `ascii.txt` 里那套 ASCII 点阵去拟造；
-页脚搬 bencho 的点阵山脊；点阵背景不要全铺满、也不要叠两层。
+**用户要求**：深色主题改纯黑+白；评分徽章用点阵把等级字母画出来；
+页脚做成一条点阵山脊；点阵背景不要全铺满、也不要叠两层。
 
 **照抄来源**
-- ASCII 点阵场：`ascii.txt` 的 `ASCIIWake.tsx`（MIT，bencho.dev/licence）→ `frontend/src/components/AsciiField.jsx`，
+- 点阵场：`frontend/src/components/AsciiField.jsx`，
   注释与参数（COLD 0.04 / RING_S 2.2 / 字符梯度 / 每帧整体冷却 / 游标 stamp）原样保留；
   只把固定 360×240 改成跟随容器，并把「立方体」抽象成可注入的掩膜。
-- 页脚山脊：bencho 页脚 `.foot-field` 的密度场 `to(x,y,H)`（三条正弦天际线 + `r^1.4` + 高频细纹）→ `ridgeMask`。
-- 色板/控件：bencho（纯黑白、1px 发丝线、胶囊/分段控件）＋ SOFT LAB 的三级文字与圆角。
+- 页脚山脊：密度场 `to(x,y,H)`（三条正弦天际线 + `r^1.4` + 高频细纹）→ `ridgeMask`。
+- 色板/控件：纯黑白、1px 发丝线、胶囊/分段控件，配合 SOFT LAB 的三级文字与圆角。
 
 **落点**
 - `Entity` 色板：`#000 / #0a0a0a / #121212 / #161616`、`#fff / #b4b4b4 / #7c7c7c`、`rgba(255,255,255,.1)`；
@@ -769,7 +769,7 @@ found=0，只剩 registry 快照能用。所以之前很多「成功」其实是
 按上一版（`ClauseLens-赛后记录-2026-11-13.zip`，161 MB）的结构整理了一份新的，落盘在
 `out/release/ClauseLens-赛后记录-2026-11-14.zip`（**180 MB**，上限 500 MB 以内）：
 
-- `code/` 取 git 跟踪的全量（250 文件里 159 个，1.4 MB；含 `ascii.txt` / `glass lens.txt` / `toggle.txt` 三个参考样本）；
+- `code/` 取 git 跟踪的全量（250 文件里 159 个，1.4 MB）；
 - `docs/` 全量（38.7 MB，含设计过程截图）；`screenshots/` 11 组 131 张（旧包的 98 张原样保留，
   新增「修复前后-透镜v3」「主题开关-太阳月亮」「水波转场-逐帧」「线上-v1.1.0」「用户反馈-参考图」33 张）；
 - `evidence/`：`git bundle`（37 MB，可 `git clone` 还原 28 次提交）+ `git-log` + 仓库统计 + 线上验证 + 会话线索；

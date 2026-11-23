@@ -1,9 +1,9 @@
 // 主题转场：像素方块「落幕」。
 //
-// 算法不是我们编的 —— 直接照 Ikaleio/lm-detector 的像素风片元着色器改写：
-//   web/src/lib/pixel-effects.ts 里的 bayer4() 有序抖动 + blocks()「逐块显现 / 逐块擦除」，
-//   web/src/lib/pixel-renderer.ts 里 canvas 每格 = 一个设备像素、再用 CSS 放大（image-rendering: pixelated）。
-// 搬过来的三条语法：
+// 做法是「像素风片元着色器」：
+//   bayer4() 有序抖动 + blocks()「逐块显现 / 逐块擦除」，
+//   canvas 每格 = 一个设备像素、再用 CSS 放大（image-rendering: pixelated）。
+// 三条约束：
 //   ① 网格是 4px 一格的真像素（不是模糊的粒子）；画布分辨率 = ceil(宽/4) × ceil(高/4)；
 //   ② 边界用 4×4 Bayer 有序抖动：前沿不是一条线，而是一片逐渐加密的方格；
 //   ③ 时间按 steps(fps) 量化（他们用 10/12/24fps）——一格一格跳，不做平滑插值。
@@ -14,7 +14,7 @@
 // 「旧页面被像素吃掉，新页面的字一格一格长出来」。
 import { applyTheme, getTheme, otherTheme, prefersReducedMotion } from "./theme.js";
 
-const CELL = 4; // 每格 CSS 像素（对齐 lm-detector 的默认 cell=4）
+const CELL = 4; // 每格 CSS 像素
 const FPS = 15; // 时间量化，15 帧/秒
 // v3：整体放慢（原来 560+60+520 ≈ 1.14s，用户嫌快）。这套是**没有 View Transitions
 // 的浏览器**才走的兜底：仍然要「铺满 → 换主题 → 擦开」两段，只能把第一段压短、第二段拉长。
@@ -41,7 +41,7 @@ let order = null;
 const fract = (v) => v - Math.floor(v);
 const rand = (a, b) => a + Math.random() * (b - a);
 
-// ── lm-detector pixel-effects.ts 原样搬过来的三个函数 ──────────────────
+// ── 抖动用的三个函数 ─────────────────────────────────────────────────
 function bayer2(x, y) {
   return fract(Math.floor(x) / 2 + Math.floor(y) * Math.floor(y) * 0.75);
 }
