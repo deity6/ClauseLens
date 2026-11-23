@@ -106,3 +106,5 @@ frontend/            ← React + Vite + motion 前端
 - 抓取只碰公开页面，不登录、不绕验证码、不打对方限速。
 - 结论用词：「条款写明」「未找到」，不写「违法」「诈骗」。本工具不是法律意见，页面要有免责声明。
 - 改文件先读，定点修改；写文件 UTF-8 无 BOM + LF。
+
+- 用户说「我已经改过了」时，先 git fetch 再看 git log HEAD..origin/master，别拿本地缓存的 origin/master 当真相。
