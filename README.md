@@ -203,3 +203,21 @@ node scripts/wipe-frames.mjs 'http://127.0.0.1:4173/' out/shots/wipe --from=ligh
 - 未配置 `CLAUSELENS_EGRESS`：被墙站点会报「连不上」。要开就在 systemd unit 里加
   `Environment=CLAUSELENS_EGRESS=instabox:<machine-id>`
 - 渲染只覆盖「正文 < 400 字才触发」，且一次分析最多 3 页
+
+## 在线站点
+
+<https://lens.dohub.tech>（前端 Cloudflare Pages；后端是作者自己的小机器，随时可能离线，离线时用下面的 demo 包或本地跑）。
+
+## 许可与数据来源
+
+- 代码：**MIT**，见 [LICENSE](LICENSE)。
+- 标签体系参考 ToS;DR（CC BY-SA 4.0 的部分见 `docs/research/`）；条款样本只用于演示：
+  `frontend/src/data/sample-baidu.json` / `sample-github.json` 是各自站点条款的原文摘录，
+  版权归原站（GitHub 条款本文按 CC0 发布；百度条款仅作离线演示，不作再分发用途）。
+- 中文标注指南与划分文件（`data/processed/`）随仓库一起发布，同一许可。
+
+## 隐私
+
+- 站点不做账号、不写 cookie、不接第三方统计脚本以外的追踪；页面浏览统计用 Cloudflare Web Analytics（无 cookie）。
+- 投票只存 `domain / tag_id / vote / at` 与 `ip_hash`（`sha1(服务端随机盐 | IP)[:12]`，盐不随代码发布），
+  用途仅限「一人一标签一票」去重与限流；**不保存明文 IP**。如果你不希望留下这条记录，请不要投票。

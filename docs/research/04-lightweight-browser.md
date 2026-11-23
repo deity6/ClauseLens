@@ -1,7 +1,7 @@
 # 轻量 SPA 渲染方案实测：只要最终 HTML，在 908 MB 机器上跑得动
 
 > 调研 + 实测日期：2026-11-12
-> 机器：新加坡 AWS `<主机别名>`（t3.micro，2 vCPU / 908 MB / 4 GB swap / Ubuntu 26.04）
+> 机器：新加坡 AWS 新加坡 AWS（t3.micro，2 vCPU / 908 MB / 4 GB swap / Ubuntu 26.04）
 > 被测服务：ClauseLens（`systemctl status clauselens`，常驻 ~174 MB）
 > 结论一句话：**用 Lightpanda 1.0.0 的 CLI 子进程方式，实测 48–184 MB / 1 个进程 / 1.9–4.8 s，
 > 三个靶站全过；原 Playwright 是 537–685 MB / 7 个进程。** Notion 这类站它渲染不出来，

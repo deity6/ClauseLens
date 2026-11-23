@@ -8,6 +8,7 @@ import json
 import threading
 import time
 from collections import defaultdict
+from ipaddress import ip_address, ip_network
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -77,22 +78,48 @@ _fb_hits: dict[str, list[float]] = defaultdict(list)
 
 
 
+# Cloudflare 的出口网段（https://www.cloudflare.com/ips-v4、ips-v6，2026-11 取）。
+# 只用来判断「直连我们的对端是不是 Cloudflare 边缘」——是才敢相信它带来的 CF-Connecting-IP。
+# 不这么判的话，任何人自己加一个 `CF-Connecting-IP: 1.2.3.4` 就能一次换一个限流桶
+# （/api/analyze 的 10 次/分钟、/api/feedback 的去重同时失效）。
+_CF_NETS = tuple(
+    ip_network(x)
+    for x in (
+        # IPv4
+        "173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22",
+        "141.101.64.0/18", "108.162.192.0/18", "190.93.240.0/20", "188.114.96.0/20",
+        "197.234.240.0/22", "198.41.128.0/17", "162.158.0.0/15", "104.16.0.0/13",
+        "104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22",
+        # IPv6
+        "2400:cb00::/32", "2606:4700::/32", "2803:f800::/32", "2405:b500::/32",
+        "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32",
+    )
+)
+
+
+def _is_cloudflare_ip(ip: str) -> bool:
+    try:
+        addr = ip_address(ip)
+    except ValueError:
+        return False
+    return any(addr in net for net in _CF_NETS)
+
+
 def _client_ip(request: Request) -> str:
     """真实客户端 IP。
 
-    生产链路是 浏览器 → lens.dohub.tech(CF Pages Function) → api.dohub.tech，
-    后端直接看到的 request.client.host 是 Cloudflare 边缘节点 IP——实测同一客户端连续三次请求
-    落到 172.71.x / 104.22.x 三个不同地址。拿它当限流键会变成"所有用户共享一个桶"（互相误伤），
-    当投票去重键则完全失效（同一个人可以无限投）。
-
-    CF-Connecting-IP 是 Cloudflare 自己填的真实客户端 IP，优先用它；直连源站（无 CF）时回退到
-    socket 对端，再退到 X-Real-IP（我们自己的 Caddy 会设，但它可能被伪造，所以排最后）。
+    链路：浏览器 → lens.dohub.tech（CF Pages Function）→ api.dohub.tech（Caddy → uvicorn）。
+    uvicorn 看到的对端永远是 127.0.0.1（Caddy）；Caddy 会把真实对端覆盖写进 X-Real-IP。
+    只有当这个对端本身是 Cloudflare 边缘时，才认它带来的 CF-Connecting-IP（真用户 IP）；
+    直连源站的人带什么头都不算数——否则伪造一个 CF-Connecting-IP 就能每请求换一个限流桶。
     """
-    for h in ("cf-connecting-ip", "x-real-ip"):
-        v = (request.headers.get(h) or "").strip()
-        if v:
-            return v
-    return request.client.host if request.client else "?"
+    peer = request.client.host if request.client else "?"
+    real_peer = (request.headers.get("x-real-ip") or "").strip() or peer
+    if _is_cloudflare_ip(real_peer):
+        cf = (request.headers.get("cf-connecting-ip") or "").strip()
+        if cf:
+            return cf
+    return real_peer
 
 
 def _rate_ok(ip: str, limit=10, window=60, table: dict | None = None) -> bool:
@@ -377,3 +404,4 @@ if DIST.exists():
         if path and f.is_file() and DIST in f.resolve().parents:
             return FileResponse(f)
         return FileResponse(DIST / "index.html")
+

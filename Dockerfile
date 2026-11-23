@@ -58,4 +58,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
 # 单进程即可；uvicorn 自带线程池，pipeline 内部也有并发探测
 CMD ["python", "-m", "uvicorn", "clauselens.api:app", \
      "--app-dir", "backend", "--host", "0.0.0.0", "--port", "8787", \
-     "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "*"]
+     "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "127.0.0.1"]
+

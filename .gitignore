@@ -34,3 +34,7 @@ demo-pkg/
 
 
 data/.vote_salt
+
+# 90 MB 的 PPT 渲染产物，不入库
+ppt/
+
