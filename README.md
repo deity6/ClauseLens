@@ -1,5 +1,7 @@
 # ClauseLens 条款透镜
 
+**[简体中文](README.md) · [English](README.en.md)**
+
 > 注册前，先看看你同意了什么。
 
 输入一个网站（`baidu.com`）或条款页面网址（`https://www.baidu.com/duty/yinsiquan-policy.html`），
