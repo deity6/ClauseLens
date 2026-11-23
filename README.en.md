@@ -215,7 +215,7 @@ node scripts/wipe-frames.mjs 'http://127.0.0.1:4173/' out/shots/wipe --from=ligh
 ### Known gaps
 
 - `CLAUSELENS_EGRESS` is not configured: blocked sites report “cannot connect”. To enable it, add
-  `Environment=CLAUSELENS_EGRESS=instabox:<machine-id>` to the systemd unit
+  `Environment=CLAUSELENS_EGRESS=cloud:<machine-id>` to the systemd unit
 - Rendering only kicks in when “body text < 400 chars”, and at most 3 pages per analysis
 
 ## Live site

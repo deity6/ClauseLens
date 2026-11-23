@@ -23,7 +23,8 @@ TOTAL_TIMEOUT = 20     # 单个页面总耗时上限
 ALLOWED_PORTS = {None, 80, 443, 8080, 8443}
 
 # 可选境外出口：直连失败时把请求改走这里。两种写法：
-#   instabox:<machine-id>   → 借 InstaBox 云容器的 exec 跑一次 curl（不暴露端口、无常驻进程）
+#   cloud:<machine-id>     → 借云端容器的 exec 跑一次 curl（不暴露端口、无常驻进程）；
+#                            `instabox:<machine-id>` 是等价旧写法，仍然认
 #   socks5h://host:port     → 走 SOCKS 代理；必须 socks5h，让远端解析域名
 # 空字符串 = 关闭，行为与以前完全一致。
 EGRESS = (os.environ.get("CLAUSELENS_EGRESS") or "").strip()
@@ -257,8 +258,10 @@ def fetch(url: str, session: requests.Session | None = None, max_redirects: int 
 
 
 def _egress_kind() -> tuple[str | None, str]:
-    if EGRESS.startswith("instabox:"):
-        return "instabox", EGRESS.split(":", 1)[1].strip()
+    # `cloud:` 是文档里用的中性写法，`instabox:` 保留兼容；两者等价
+    for prefix in ("cloud:", "instabox:"):
+        if EGRESS.startswith(prefix):
+            return "instabox", EGRESS.split(":", 1)[1].strip()
     if EGRESS:
         return "socks5", EGRESS
     return None, ""

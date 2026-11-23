@@ -216,7 +216,7 @@ node scripts/wipe-frames.mjs 'http://127.0.0.1:4173/' out/shots/wipe --from=ligh
 ### 已知缺口
 
 - 未配置 `CLAUSELENS_EGRESS`：被墙站点会报「连不上」。要开就在 systemd unit 里加
-  `Environment=CLAUSELENS_EGRESS=instabox:<machine-id>`
+  `Environment=CLAUSELENS_EGRESS=cloud:<machine-id>`
 - 渲染只覆盖「正文 < 400 字才触发」，且一次分析最多 3 页
 
 ## 在线站点
