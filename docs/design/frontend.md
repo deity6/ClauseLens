@@ -1,6 +1,6 @@
 # 前端设计说明 v1
 
-> 前端代理照此实现。审美参考：`C:\Users\<user>\.workbuddy\skills\frontend-design-vault`（先读其 SKILL.md 第1、5节，
+> 前端代理照此实现。审美参考：`（本地设计参考目录，略）`（先读其 SKILL.md 第1、5节，
 > `references/12-design-templates.md` 规律六条，`references/07-visual-texture.md`，`references/11-ai-native-ui.md` 的"六条可迁移模式"）。
 > 参考是参考池，不是照抄：本项目要有自己的性格。
 
