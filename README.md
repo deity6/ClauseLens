@@ -233,6 +233,10 @@ node scripts/wipe-frames.mjs 'http://127.0.0.1:4173/' out/shots/wipe --from=ligh
 ## 许可与数据来源
 
 - 代码：**MIT**，见 [LICENSE](LICENSE)。
+  MIT 的义务只有一条：**再分发代码或构建产物时，保留版权声明与许可全文**（`LICENSE` 跟着走就行）；
+  它不要求在网页界面上显著署名（那是 CC BY 那类协议的要求）。
+- 第三方组件、网页字体与借鉴实现的许可：见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)
+  （React / motion 为 MIT；Inter / Instrument Serif / Space Mono / Noto Sans SC / 霞鹜文楷为 OFL-1.1，全文随仓库附带）。
 - 标签体系参考 ToS;DR（CC BY-SA 4.0 的部分见 `docs/research/`）；条款样本只用于演示：
   `frontend/src/data/sample-baidu.json` / `sample-github.json` 是各自站点条款的原文摘录，
   版权归原站（GitHub 条款本文按 CC0 发布；百度条款仅作离线演示，不作再分发用途）。
