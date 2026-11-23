@@ -8,10 +8,32 @@ ClauseLens 会找到它的隐私政策 / 用户协议，逐条阅读，给出 **
 
 > 结果由程序自动分析，仅供参考，不构成法律意见。
 
+## 长什么样
+
+<p align="center">
+  <img src="docs/assets/readme/home.jpg" width="49%" alt="首页：输入一个网站">
+  <img src="docs/assets/readme/result.jpg" width="49%" alt="结果页：等级、分数、一句话总结">
+</p>
+<p align="center"><sub>左：输入一个网站（或条款页网址） · 右：等级 / 分数 / 一句话总结，每个结论都能点开看原文</sub></p>
+
+<p align="center">
+  <img src="docs/assets/readme/result-findings.jpg" width="49%" alt="标签抽屉：原文证据与投票">
+  <img src="docs/assets/readme/compliance.jpg" width="49%" alt="按法域逐项检查">
+</p>
+<p align="center"><sub>左：点开标签 = 这对你意味着什么 + 原文证据 + 认同 / 不认同（可改可撤） · 右：按法域逐条检查「该写的写了吗」</sub></p>
+
+<p align="center">
+  <img src="docs/assets/readme/result-dark.jpg" width="62%" alt="点阵主题（深色）">
+  <img src="docs/assets/readme/mobile-dark.jpg" width="18%" alt="手机端跟随系统深色">
+</p>
+<p align="center"><sub>左：点阵主题（桌面默认浅色，手动切换） · 右：手机端自动跟随系统深浅色</sub></p>
+
+<sub>截图里的数据来自内置示例（`?demo=baidu`），不连服务器。</sub>
+
 ## 快速开始（Windows，bash / Git Bash，整块粘贴）
 
 ```bash
-cd "E:/deepseek harness/ClauseLens-条款透镜"
+git clone git@github.com:deity6/ClauseLens.git && cd ClauseLens
 pip install -r requirements.txt                                              # 首次（版本已锁）
 cd frontend && npm install && npm run build && cd ..                         # 首次或改前端后
 python -m uvicorn clauselens.api:app --app-dir backend --port 8787
