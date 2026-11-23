@@ -866,3 +866,26 @@ API 直连省掉 Pages Function 那一跳。CF 优选/换线路是最后手段�
   `C:\Users\<user>` 本机路径、`.env.example` 的 InstaBox 容器 ID 全部换成占位。
   注意：盐在历史提交里还有（私有仓库可接受；哪天转公开要先 purge 历史）。
 - 仓库 `github.com/deity6/ClauseLens`（私有）已更新到 `52259ed`。
+
+## 2026-11-23（开源）· 只读审查 → 清理 → 仓库重建后公开
+
+公开前让审查代理做了一次只读体检（251 个跟踪文件 + 全部历史），判 unsafe，逐条修：
+
+1. **限流/去重身份可伪造（真 bug）**：`_client_ip` 原来无条件下信 `cf-connecting-ip`、其次 `x-real-ip`，
+   直连源站的人发一个 `CF-Connecting-IP: 1.2.3.4` 就能每个请求换一个限流桶（10 次/分钟、投票去重同时失效）。
+   改成：只有当 Caddy 写进来的「真实对端」（`X-Real-IP`）落在 Cloudflare 网段时，才采信它带来的
+   CF-Connecting-IP；同时 Caddy `reverse_proxy` 里加 `header_up X-Real-IP {remote_host}` /
+   `header_up X-Forwarded-For {remote_host}`（覆盖式，客户端自带的头不算数），
+   Dockerfile 的 `--forwarded-allow-ips` 从 `*` 收到 `127.0.0.1`。
+   实测：伪造 `X-Real-IP: 104.16.0.1` + 每次不同的 `CF-Connecting-IP` 连打 12 次 → 前 10 次放行、后 2 次
+   `rate_limited`；走站点（Pages Function）同一条链路，后端落盘的 `ip_hash` 与 `sha1(盐|本机真实 IP)` 完全一致
+   （`cc1c85868638`），说明正常用户仍然按真实 IP 计。
+2. **历史里的隐私**：`data/.vote_salt`（48 位盐，配合 32 位 IP 空间可离线撞出真实 IP）、
+   本人出口 IP、`C:\Users\<user>` 路径、InstaBox 容器 ID、以及评审里与本项目无关的第三方面板域名/凭据位置、
+   生产源站 IP —— 用 `git filter-repo` 一次性从**全部历史**里删掉/替换（先 `git bundle` 备份）。
+3. **仓库卫生**：补 MIT `LICENSE`；`out/` 不再跟踪；`ppt/`（90 MB 渲染产物）进 `.gitignore`；
+   README 补「在线站点 / 许可与数据来源 / 隐私」三节。
+4. **重建而非 force-push**：filter-repo 之后 force-push，旧提交对象在 GitHub 上仍可按 SHA 匿名取到
+   （实测 `/commits/50a7db7` 200、`/contents/data/.vote_salt?ref=50a7db7` 200）。所以把旧仓库改名
+   `ClauseLens-prerewrite` 并转私有，同名新建 `ClauseLens` 推干净历史，再转公开；
+   现在旧 SHA 在新仓库 404/422，盐已不可达。
